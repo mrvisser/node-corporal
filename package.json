@@ -1,0 +1,33 @@
+{
+    "name": "corporal",
+    "description": "An extensible interactive shell utility",
+    "version": "0.0.1",
+    "homepage": "https://github.com/mrvisser/node-corporal",
+    "author": {
+        "name": "Branden Visser",
+        "email": "mrvisser@gmail.com"
+    },
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "git://github.com/mrvisser/node-corporal.git"
+    },
+    "bugs": {
+        "url": "https://github.com/mrvisser/node-corporal/issues"
+    },
+    "main": "./index.js",
+    "dependencies": {
+        "colors": "latest",
+        "optimist": "latest",
+        "sprintf-js": "latest",
+        "underscore": "latest"
+    },
+    "devDependencies": {
+        "grunt": "latest",
+        "grunt-mocha-test": "latest",
+        "grunt-release": "~0.7.0"
+    },
+    "engines": {
+        "node": ">=0.8"
+    }
+}
