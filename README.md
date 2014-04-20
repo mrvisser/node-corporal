@@ -2,7 +2,60 @@
 
 [![Build Status](https://travis-ci.org/mrvisser/node-corporal.png?branch=master)](https://travis-ci.org/mrvisser/node-corporal)
 
-An extensible interactive shell utility.
+An extensible interactive shell utility. Corporal can be used as an API in order to create a customized interactive shell experience
+for your CLI utility.
+
+## Features
+
+Currently:
+
+* Multi-line command support
+* Customizable PS1 / PS2 prompts
+* Mutable environment for stateful shell sessions
+* Help / command list index
+
+Future:
+
+* Automated auto-complete functionality
+
+## Examples
+
+Create an interactive shell with just a `help` and `quit` command:
+
+**Code:**
+```javascript
+var Corporal = require('corporal');
+new Corporal().start();
+```
+
+**Session:**
+```
+> help
+List of available commands:
+
+help:  Show a dialog of all available commands.
+quit:  Quit the interactive shell.
+
+> blah
+Invalid command: blah
+
+List of available commands:
+
+help:  Show a dialog of all available commands.
+quit:  Quit the interactive shell.
+
+> help help
+
+Show a dialog of all available commands.
+
+Usage: help [<command>]
+
+> help quit
+
+Quit the interactive shell.
+
+> quit
+```
 
 ## License
 
