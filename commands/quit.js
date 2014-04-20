@@ -1,4 +1,3 @@
-var _ = require('underscore');
 var sprintf = require('sprintf-js').sprintf;
 
 module.exports = {

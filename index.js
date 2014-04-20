@@ -27,8 +27,14 @@ Corporal.prototype.start = function(callback) {
     session.commands('help', require('./commands/help'));
     session.commands('quit', require('./commands/quit'));
 
-    // Begin the command loop
-    return CorporalUtil.doCommandLoop(session, callback);
+    _resolveConsumerCommands(session, this._options, function(err) {
+        if (err) {
+            return callback(err);
+        }
+
+        // Begin the command loop
+        CorporalUtil.doCommandLoop(session, callback);
+    });
 };
 
 /*!
@@ -42,7 +48,10 @@ function _resolveConsumerCommands(session, options, callback) {
         _.each(options.commands, function(command, commandName) {
             session.commands(commandName, command);
         });
+        return callback();
     }
+
+    return callback();
 }
 
 /*!
