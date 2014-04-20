@@ -33,7 +33,7 @@ Corporal.prototype.start = function(callback) {
         }
 
         // Begin the command loop
-        CorporalUtil.doCommandLoop(session, callback);
+        return CorporalUtil.doCommandLoop(session, callback);
     });
 };
 
