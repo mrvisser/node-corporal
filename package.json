@@ -1,7 +1,7 @@
 {
   "name": "corporal",
   "description": "An extensible interactive shell utility",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "homepage": "https://github.com/mrvisser/node-corporal",
   "author": {
     "name": "Branden Visser",
