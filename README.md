@@ -1,5 +1,7 @@
 ## Corporal
 
+[![Build Status](https://travis-ci.org/mrvisser/node-corporal.png?branch=master)](https://travis-ci.org/mrvisser/node-corporal)
+
 An extensible interactive shell utility.
 
 ## License
