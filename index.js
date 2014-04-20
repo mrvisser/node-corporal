@@ -24,6 +24,7 @@ Corporal.prototype.start = function(callback) {
     var session = new CorporalSession(env);
 
     // Load the internal commands
+    session.commands('clear', require('./commands/clear'));
     session.commands('help', require('./commands/help'));
     session.commands('quit', require('./commands/quit'));
 

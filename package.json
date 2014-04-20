@@ -18,6 +18,7 @@
   "main": "./index.js",
   "dependencies": {
     "colors": "latest",
+    "keypress": "latest",
     "optimist": "latest",
     "sprintf-js": "latest",
     "underscore": "latest"

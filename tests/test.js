@@ -85,14 +85,28 @@ describe('Built-In Commands', function() {
         });
     });
 
+    describe('clear', function() {
+
+        it('executes the clear-screen control characters when invoked', function(callback) {
+            var runner = _createRunner();
+            runner.start(function() {
+                runner.exec('clear', function(data) {
+                    assert.strictEqual(data, '\u001B[2J\u001B[0;0f');
+                    return callback();
+                });
+            });
+        });
+    });
+
     describe('help', function() {
 
         it('lists the help and quit command when run without arguments', function(callback) {
             var runner = _createRunner();
             runner.start(function() {
                 runner.exec('help', function(data) {
-                    assert.notEqual(data.indexOf('help:  Show a dialog of all available commands.'), -1);
-                    assert.notEqual(data.indexOf('quit:  Quit the interactive shell.'), -1);
+                    assert.notEqual(data.indexOf('clear:  Clear the terminal window.'), -1);
+                    assert.notEqual(data.indexOf('help :  Show a dialog of all available commands.'), -1);
+                    assert.notEqual(data.indexOf('quit :  Quit the interactive shell.'), -1);
                     return callback();
                 });
             });
