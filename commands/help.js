@@ -15,7 +15,8 @@ module.exports = {
                 console.log('');
 
                 if (_.isString(command.help)) {
-                    process.stdout.write(command.help);
+                    console.log(command.help);
+                    console.log('');
                 }
             } else {
                 console.log('No command found with name: "%s"', commandName);

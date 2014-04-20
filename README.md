@@ -9,53 +9,112 @@ for your CLI utility.
 
 Currently:
 
-* Multi-line command support
-* Customizable PS1 / PS2 prompts
-* Mutable environment for stateful shell sessions
-* Help / command list index
+* Multi-line commands
+* Custom PS1 and PS2 prompts
+* API and Model for creating and loading your own commands
+* Environment support for stateful CLI sessions
 
-Future:
+Planned:
 
-* Automated auto-complete functionality
+* Using "Up" arrow key to load previous commands
+* Using "Tab" auto-complete based on loaded
 
 ## Examples
 
-Create an interactive shell with just a `help` and `quit` command:
+### Whoami
 
-**Code:**
+See `examples/whoami` for this tutorial.
+
+**Sample Setup:**
+
 ```javascript
 var Corporal = require('corporal');
-new Corporal().start();
+var corporal = new Corporal({
+
+    // Commands will be loaded from JS files in the "commands" directory. Each command
+    // exports an object that contains data and functions for describing and invoking
+    // the command
+    'commands': __dirname + '/commands'
+
+    // Define an initial environment
+    //  * The arbitrary "me" environment variable defines who the "current user" is
+    //  * The ps1 variable pulls the current value of the "me" variable to put in the PS1 prompt
+    //  * The the "colors" module is used to provide "bold" styling on the PS1
+    //  * The ps2 variable is used as the prompt prefix in multi-line commands. "> " is also
+    //    the default value
+    'env': {
+        'me': 'unknown'
+        'ps1' '%(me)s$ '.bold,
+        'ps2': '> '
+    }
+});
+
+// Start the interactive prompt
+corporal.start();
 ```
 
-**Session:**
+**Sample Command:**
+
+`commands/iam.js` command is used to set in the environment the current user. The name of the JS file will indicate what the name of the command should be:
+
+```javascript
+var optimist = require('optimist');
+
+module.exports = {
+
+    // Required: Defines a description for the command that can be seen in command listings
+    // and help dialogs
+    'description': 'Tell the session who you are.',
+
+    // Optional: Additional text to show how the command can be used. Can be multi-line, etc...
+    'help': 'Usage: iam <name>',
+
+    // The function that actually invokes the command. Optimist is being used here to parse
+    // the array arguments that were provided to your command, however you can use whatever
+    // utility you want
+    'invoke': function(session, args, callback) {
+
+        // Parse the arguments using optimist
+        var argv = optimist.parse(args);
+
+        // Update the environment to indicate who the specified user now is
+        session.env('me', argv._[0] || 'unknown');
+
+        // The callback always needs to be invoked to finish the command
+        return callback();
+    }
+};
 ```
-> help
+
+**Sample Usage:**
+
+```
+~/Source/node-corporal$ node examples/whoami/run.js
+unknown$ help
 List of available commands:
 
-help:  Show a dialog of all available commands.
-quit:  Quit the interactive shell.
+help :  Show a dialog of all available commands.
+quit :  Quit the interactive shell.
+greet:  Give a greeting to the current user.
+iam  :  Tell the session who you are.
 
-> blah
-Invalid command: blah
+unknown$ greet
+Hello, unknown
+unknown$ iam branden
+branden$ greet
+Hello, branden
+branden$ iam \
+> \
+> steve
+steve$ help iam
 
-List of available commands:
+Tell the session who you are.
 
-help:  Show a dialog of all available commands.
-quit:  Quit the interactive shell.
+Usage: iam <name>
 
-> help help
-
-Show a dialog of all available commands.
-
-Usage: help [<command>]
-
-> help quit
-
-Quit the interactive shell.
-
-> quit
+steve$ quit
 ```
+
 
 ## License
 
