@@ -9,6 +9,7 @@ for your CLI utility.
 
 Currently:
 
+* Tab auto-complete for commands based on available commands
 * Multi-line commands
 * Custom PS1 and PS2 prompts
 * API and Model for creating and loading your own commands
@@ -18,8 +19,8 @@ Currently:
 
 Planned:
 
-* Using "Tab" auto-complete based on loaded
 * Ability to hide internal commands clear, help, quit from help index
+* Ability for commands to extend auto-complete functionality for more than just command-name completion
 
 ## Examples
 
