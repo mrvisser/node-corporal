@@ -25,8 +25,6 @@ Corporal.prototype.start = function(callback) {
 
     self._options.disabled = _.isArray(self._options.disabled) ? self._options.disabled : [];
 
-    console.log('disabled commands: %s', JSON.stringify(self._options.disabled));
-
     var session = new CorporalSession(env);
 
     // Load the internal commands
