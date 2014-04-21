@@ -67,6 +67,28 @@ describe('Command Loading', function() {
             return callback();
         });
     });
+
+    it('does not load commands that are disabled', function(callback) {
+        // Load from a directory with a failing command while disabling the failing command
+        var runner1 = _createRunner(_commandDir('fails-when-a-command-without-an-invoke-method-is-encountered'), null, null, ['no-invoke-method']);
+        runner1.start(function() {
+            runner1.exec('help', function(data) {
+                assert.strictEqual(data.indexOf('no-invoke-method'), -1);
+                assert.notEqual(data.indexOf('command1:  command1.'), -1);
+
+                // Load another one, but disable both clear and no-invoke-method
+                var runner2 = _createRunner(_commandDir('fails-when-a-command-without-an-invoke-method-is-encountered'), null, null, ['clear', 'no-invoke-method']);
+                runner2.start(function() {
+                    runner2.exec('help', function(data) {
+                        assert.strictEqual(data.indexOf('clear'), -1);
+                        assert.strictEqual(data.indexOf('no-invoke-method'), -1);
+                        assert.notEqual(data.indexOf('command1:  command1.'), -1);
+                        return callback();
+                    });
+                });
+            });
+        });
+    });
 });
 
 describe('Built-In Commands', function() {
@@ -153,8 +175,8 @@ describe('Built-In Commands', function() {
  * Creates a runner and keeps track of it to be closed after the
  * test.
  */
-function _createRunner(commands, ps1, ps2) {
-    var runner = new CorporalTestRunner(commands, ps1, ps2);
+function _createRunner(commands, ps1, ps2, disabled) {
+    var runner = new CorporalTestRunner(commands, ps1, ps2, disabled);
     _currentRunners.push(runner);
     return runner;
 }

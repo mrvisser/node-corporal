@@ -19,7 +19,7 @@ Currently:
 
 Planned:
 
-* Ability to hide internal commands clear, help, quit from help index
+* Ability to hide commands from the help index yet still available to execute
 * Ability for commands to extend auto-complete functionality for more than just command-name completion
 
 ## Examples

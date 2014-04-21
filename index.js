@@ -15,26 +15,36 @@ var Corporal = module.exports = function(options) {
  * with the quit command.
  */
 Corporal.prototype.start = function(callback) {
+    var self = this;
+
     callback = callback || function() {};
-    var env = _.defaults({}, this._options.env, {
+    var env = _.defaults({}, self._options.env, {
         'ps1': '> '.bold,
         'ps2': '> '
     });
 
+    self._options.disabled = _.isArray(self._options.disabled) ? self._options.disabled : [];
+
+    console.log('disabled commands: %s', JSON.stringify(self._options.disabled));
+
     var session = new CorporalSession(env);
 
     // Load the internal commands
-    session.commands('clear', require('./commands/clear'));
-    session.commands('help', require('./commands/help'));
-    session.commands('quit', require('./commands/quit'));
-
-    _resolveConsumerCommands(session, this._options, function(err) {
+    var internalCommandsDir = path.join(__dirname, 'commands');
+    _loadCommandsFromDir(session, internalCommandsDir, self._options.disabled, function(err) {
         if (err) {
             return callback(err);
         }
 
-        // Begin the command loop
-        return CorporalUtil.doCommandLoop(session, callback);
+        // Resolve the commands provided by the consumer
+        _resolveConsumerCommands(session, self._options, function(err) {
+            if (err) {
+                return callback(err);
+            }
+
+            // Begin the command loop
+            return CorporalUtil.doCommandLoop(session, callback);
+        });
     });
 };
 
@@ -44,10 +54,13 @@ Corporal.prototype.start = function(callback) {
  */
 function _resolveConsumerCommands(session, options, callback) {
     if (_.isString(options.commands)) {
-        return _loadCommandsFromDir(session, options.commands, callback);
+        // Load the commands from the specified string directory path
+        return _loadCommandsFromDir(session, options.commands, options.disabled, callback);
     } else if (_.isObject(options.commands)) {
-        _.each(options.commands, function(command, commandName) {
-            session.commands(commandName, command);
+        // Load the commands from the explicit commands object. We filter out any command name that
+        // is specified to be "disabled" in the corporal options
+        _.chain(options.commands).keys().difference(options.disabled).each(function(commandName) {
+            session.commands(commandName, options.commands[commandName]);
         });
         return callback();
     }
@@ -58,7 +71,7 @@ function _resolveConsumerCommands(session, options, callback) {
 /*!
  * Load commands from JS files in a directory path.
  */
-function _loadCommandsFromDir(session, dirPath, callback) {
+function _loadCommandsFromDir(session, dirPath, disabled, callback) {
     fs.readdir(dirPath, function(err, fileNames) {
         if (err) {
             return callback(err);
@@ -66,12 +79,23 @@ function _loadCommandsFromDir(session, dirPath, callback) {
 
         // Load each JS file as a command into the session
         _.chain(fileNames)
+
+            // Only accept JS files
             .filter(function(fileName) {
                 return (fileName.split('.').pop() === 'js');
             })
-            .each(function(fileName) {
-                var fileNameNoExt = fileName.split('.').slice(0, -1).join('.');
-                session.commands(fileNameNoExt, require(path.join(dirPath, fileNameNoExt)));
+
+            // Pluck out the extension of the file name to get the command name
+            .map(function(fileName) {
+                return fileName.split('.').slice(0, -1).join('.');
+            })
+
+            // Don't accept any from the disabled list of command names
+            .difference(disabled)
+
+            // Add each command to the session
+            .each(function(commandName) {
+                session.commands(commandName, require(path.join(dirPath, commandName)));
             });
 
         return callback();
