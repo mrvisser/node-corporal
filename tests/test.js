@@ -22,7 +22,7 @@ afterEach(function(callback) {
 describe('Command Loading', function() {
 
     it('loads commands from a directory', function(callback) {
-        var runner = _createRunner(_commandDir('loads-commands-from-a-directory'));
+        var runner = _createRunner({'commands': _commandDir('loads-commands-from-a-directory')});
         runner.start(function() {
             runner.exec('help', function(data) {
                 assert.notEqual(data.indexOf('help    :  Show a dialog of all available commands.'), -1);
@@ -35,7 +35,7 @@ describe('Command Loading', function() {
     });
 
     it('fails when a command without a description is encountered', function(callback) {
-        var runner = _createRunner(_commandDir('fails-when-a-command-without-a-description-is-encountered'));
+        var runner = _createRunner({'commands': _commandDir('fails-when-a-command-without-a-description-is-encountered')});
         runner.start(function() {});
 
         // Keep track of all stderr output from the process. We are listening for an error
@@ -52,7 +52,7 @@ describe('Command Loading', function() {
     });
 
     it('fails when a command without an invoke method is encountered', function(callback) {
-        var runner = _createRunner(_commandDir('fails-when-a-command-without-an-invoke-method-is-encountered'));
+        var runner = _createRunner({'commands': _commandDir('fails-when-a-command-without-an-invoke-method-is-encountered')});
         runner.start(function() {});
 
         // Keep track of all stderr output from the process. We are listening for an error
@@ -70,14 +70,20 @@ describe('Command Loading', function() {
 
     it('does not load commands that are disabled', function(callback) {
         // Load from a directory with a failing command while disabling the failing command
-        var runner1 = _createRunner(_commandDir('fails-when-a-command-without-an-invoke-method-is-encountered'), null, null, ['no-invoke-method']);
+        var runner1 = _createRunner({
+            'commands': _commandDir('fails-when-a-command-without-an-invoke-method-is-encountered'),
+            'disabled': ['no-invoke-method']
+        });
         runner1.start(function() {
             runner1.exec('help', function(data) {
                 assert.strictEqual(data.indexOf('no-invoke-method'), -1);
                 assert.notEqual(data.indexOf('command1:  command1.'), -1);
 
                 // Load another one, but disable both clear and no-invoke-method
-                var runner2 = _createRunner(_commandDir('fails-when-a-command-without-an-invoke-method-is-encountered'), null, null, ['clear', 'no-invoke-method']);
+                var runner2 = _createRunner({
+                    'commands': _commandDir('fails-when-a-command-without-an-invoke-method-is-encountered'),
+                    'disabled': ['clear', 'no-invoke-method']
+                });
                 runner2.start(function() {
                     runner2.exec('help', function(data) {
                         assert.strictEqual(data.indexOf('clear'), -1);
@@ -154,6 +160,35 @@ describe('Built-In Commands', function() {
                 });
             });
         });
+
+        it('hides commands from the command listing when configured to do so', function(callback) {
+            // Hide the "clear" command from the index
+            var runner = _createRunner({
+                'env': {
+                    'corporal_command_settings': {
+                        'help': {
+                            'hide': ['clear']
+                        }
+                    }
+                }
+            });
+            runner.start(function() {
+                runner.exec('help', function(data) {
+                    // Ensure it shows help and quit
+                    assert.notEqual(data.indexOf('help:  Show a dialog of all available commands.'), -1);
+                    assert.notEqual(data.indexOf('quit:  Quit the interactive shell.'), -1);
+
+                    // Ensure it does not show clear
+                    assert.strictEqual(data.indexOf('clear'), -1);
+
+                    // Ensure it does show the help for clear when specifically requested
+                    runner.exec('help clear', function(data) {
+                        assert.notEqual(data.indexOf('Clear the terminal window.'), -1);
+                        return callback();
+                    });
+                });
+            });
+        });
     });
 
     describe('quit', function() {
@@ -175,8 +210,8 @@ describe('Built-In Commands', function() {
  * Creates a runner and keeps track of it to be closed after the
  * test.
  */
-function _createRunner(commands, ps1, ps2, disabled) {
-    var runner = new CorporalTestRunner(commands, ps1, ps2, disabled);
+function _createRunner(options) {
+    var runner = new CorporalTestRunner(options);
     _currentRunners.push(runner);
     return runner;
 }

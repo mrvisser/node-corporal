@@ -9,11 +9,12 @@ var util = require('util');
  * Create a runner that can be used to start a process running the
  * corporal interactive shell utility
  */
-var Runner = module.exports = function(commandsDir, ps1, ps2, disabled) {
-    this._commands = commandsDir;
-    this._ps1 = ps1 || '> ';
-    this._ps2 = ps2 || '> ';
-    this._disabled = disabled;
+var Runner = module.exports = function(options) {
+    this._options = options || {};
+    this._options.env = _.defaults({}, this._options.env, {
+        'ps1': '> ',
+        'ps2': '> '
+    });
 };
 util.inherits(Runner, events.EventEmitter);
 
@@ -24,23 +25,25 @@ util.inherits(Runner, events.EventEmitter);
 Runner.prototype.start = function(callback) {
     var self = this;
 
+    // The args for the corporal process fork
     var args = [path.join(__dirname, 'internal', 'runner.js')];
-    if (self._commands) {
-        args.push('--commands', self._commands);
+
+    // Apply the session environment
+    args.push('--env', JSON.stringify(self._options.env));
+
+    if (self._options.commands) {
+        args.push('--commands', self._options.commands);
     }
 
-    if (self._ps1) {
-        args.push('--ps1', self._ps1);
+    if (self._options.disabled) {
+        args.push('--disabled', self._options.disabled.join(','));
     }
 
-    if (self._ps2) {
-        args.push('--ps2', self._ps2);
+    if (process.env['CORPORAL_TEST_VERBOSE']) {
+        console.log('spawn: %s', JSON.stringify(_.union('node', args), null, 2));
     }
 
-    if (self._disabled) {
-        args.push('--disabled', self._disabled.join(','));
-    }
-
+    // Spawn the corporal process
     self._child = child.spawn('node', args);
 
     // Pass stdout, stderr and close events to the runner so consumers can listen
@@ -58,7 +61,7 @@ Runner.prototype.start = function(callback) {
     });
     self._child.on('close', function(code, signal) { self.emit('close', code, signal); });
 
-    // When the next prompt occurs, call the callback
+    // When the next prompt occurs, return to the caller
     self._whenPrompt(function(data) {
         return callback();
     });
@@ -82,7 +85,7 @@ Runner.prototype._whenPrompt = function(callback) {
 
     var _data = '';
     var _onData = function(data) {
-        var splitData = data.toString().split(self._ps1);
+        var splitData = data.toString().split(self._options.env.ps1);
         _data += splitData[0];
         if (splitData.length === 1) {
             return self._child.stdout.once('data', _onData);

@@ -19,6 +19,7 @@ Corporal.prototype.start = function(callback) {
 
     callback = callback || function() {};
     var env = _.defaults({}, self._options.env, {
+        'corporal_command_settings': {},
         'ps1': '> '.bold,
         'ps2': '> '
     });
@@ -40,8 +41,15 @@ Corporal.prototype.start = function(callback) {
                 return callback(err);
             }
 
-            // Begin the command loop
-            return CorporalUtil.doCommandLoop(session, callback);
+            // Initialize each resolved command
+            _initializeCommands(session, _.values(session.commands()), function(err) {
+                if (err) {
+                    return callback(err);
+                }
+
+                // Begin the command loop
+                return CorporalUtil.doCommandLoop(session, callback);
+            });
         });
     });
 };
@@ -97,5 +105,31 @@ function _loadCommandsFromDir(session, dirPath, disabled, callback) {
             });
 
         return callback();
+    });
+}
+
+/*!
+ * Initialize each command in the given list of commands
+ */
+function _initializeCommands(session, commands, callback) {
+    if (_.isEmpty(commands)) {
+        return callback();
+    }
+
+    // Get the next command to initialize
+    var command = commands.pop();
+    if (!_.isFunction(command.init)) {
+        // If it does not have the optional init function we just skip it
+        return _initializeCommands(session, commands, callback);
+    }
+
+    // Initialize the command
+    command.init(session, function(err) {
+        if (err) {
+            return callback(err);
+        }
+
+        // Recursively move on to the next command
+        return _initializeCommands(session, commands, callback);
     });
 }
