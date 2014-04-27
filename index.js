@@ -10,8 +10,7 @@ var Corporal = module.exports = function(options) {
 };
 
 /**
- * Start the corporal command session. The callback
- * is invoked when the user completes the session
+ * Start the corporal command session. The callback is invoked when the user completes the session
  * with the quit command.
  */
 Corporal.prototype.start = function(callback) {
@@ -48,15 +47,85 @@ Corporal.prototype.start = function(callback) {
                 }
 
                 // Begin the command loop
-                return CorporalUtil.doCommandLoop(session, callback);
+                return CorporalUtil.doCommandLoop(session, self._errorHandlers, callback);
             });
         });
     });
 };
 
+/**
+ * Handle an error that was thrown from a command.
+ *
+ * @param   {Function}              type            The type function of the error to handle
+ * @param   {String|Regex|Function} [codeMatch]     A matcher for a 'code' property that may be
+ *                                                  present on the object. The type of matcher
+ *                                                  drives selection priority in this order:
+ *
+ *                                                      1. String
+ *                                                      2. RegExp
+ *                                                      3. Function (takes a code as parameter)
+ *                                                      4. No matcher present
+ *
+ *                                                  Secondary priority is based on registration
+ *                                                  order
+ * @param   {Function}              handler         The handler function for the error
+ * @param   {Error}                 handler.err     The error object that was caught
+ * @param   {Function}              handler.next    The function to invoke when the next command can
+ *                                                  be read from the user
+ */
+Corporal.prototype.onCommandError = function(/*type, [codeMatch,] handler*/) {
+    // Resolve type parameters
+    var type = null;
+    if (_.isString(arguments[0])) {
+        type = arguments[0];
+    } else {
+        throw new Error('Unexpected first argument type for onCommandError handler');
+    }
+
+    // Resolve the codeMatch and handler parameters
+    var codeMatch = null;
+    var handler = null;
+    if (_.isFunction(arguments[1]) && _.isFunction(arguments[2])) {
+        codeMatch = arguments[1];
+        handler = arguments[2];
+    } else if (_.isFunction(arguments[1])) {
+        handler = arguments[1];
+    } else {
+        throw new Error('Unexpected second argument type for onCommandError handler');
+    }
+
+    // Seed the error handlers for this type of error
+    var errorHandlers = this._errorHandlers = this._errorHandlers || {
+        'types': [],
+        'handlers': {}
+    };
+
+    var handlersForType = errorHandlers.handlers[type];
+    if (!handlersForType) {
+        errorHandlers.types.push(type);
+        handlersForType = errorHandlers.handlers[type] = {
+            'function': [],
+            'null': [],
+            'regexp': [],
+            'string': []
+        };
+    }
+
+    if (_.isFunction(codeMatch)) {
+        handlersForType['function'].push({'codeMatch': codeMatch, 'handler': handler});
+    } else if (_.isRegExp(codeMatch)) {
+        handlersForType['regexp'].push({'codeMatch': codeMatch, 'handler': handler});
+    } else if (_.isString(codeMatch)) {
+        handlersForType['string'].push({'codeMatch': codeMatch, 'handler': handler});
+    } else if (!codeMatch) {
+        handlersForType['null'].push({'handler': handler});
+    } else {
+        throw new Error('Invalid type for "codeMatch" while registering onCommandError handler');
+    }
+};
+
 /*!
- * Given the corporal options, load the consumer commands based
- * on the configuration.
+ * Given the corporal options, load the consumer commands based on the configuration.
  */
 function _resolveConsumerCommands(session, options, callback) {
     if (_.isString(options.commands)) {
