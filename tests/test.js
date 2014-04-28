@@ -206,6 +206,62 @@ describe('Built-In Commands', function() {
     });
 });
 
+describe('Error Handling', function() {
+
+    it('handles precedence use-cases for error type and code', function(callback) {
+        var runner = _createRunner({'commands': _commandDir('error-handler-resolution')});
+        runner.start(function() {
+
+            // Verify all precedence use-cases based on error type and code
+            runner.exec('throw-typea-stringmatch', function(data) {
+                assert.strictEqual(data, 'TypeAError: isastringmatch\n');
+                runner.exec('throw-typea-regexpmatch', function(data) {
+                    assert.strictEqual(data, 'TypeAError: isaregexpmatch\n');
+                    runner.exec('throw-typea-functionmatch', function(data) {
+                        assert.strictEqual(data, 'TypeAError: isafunctionmatch\n');
+                        runner.exec('throw-typea-nomatch', function(data) {
+                            assert.strictEqual(data, 'TypeAError: isanullmatch 0\n');
+                            runner.exec('throw-typea-nocode', function(data) {
+                                assert.strictEqual(data, 'TypeAError: isanullmatch 0\n');
+                                runner.exec('throw-typea-stringmatch-ordermatters', function(data) {
+                                    assert.strictEqual(data, 'TypeAError: teststringprecedence 0\n');
+                                    runner.exec('throw-typea-regexpmatch-ordermatters', function(data) {
+                                        assert.strictEqual(data, 'TypeAError: testregexpprecedence 0\n');
+                                        runner.exec('throw-typea-functionmatch-ordermatters', function(data) {
+                                            assert.strictEqual(data, 'TypeAError: testfunctionprecedence 0\n');
+                                            runner.exec('throw-typeb-stringmatch', function(data) {
+                                                assert.strictEqual(data, 'TypeBError: isastringmatch\n');
+                                                runner.exec('throw-error-stringmatch', function(data) {
+                                                    assert.strictEqual(data, 'Error: isastringmatch\n');
+                                                    runner.exec('throw-catchall', function(data) {
+                                                        assert.strictEqual(data, 'Error: catchall\n');
+
+                                                        // Ensure we can still somewhat operate and exit properly
+                                                        runner.exec('help', function(data) {
+                                                            assert.notEqual(data.indexOf('Clear the terminal window.'), -1);
+                                                            assert.notEqual(data.indexOf('Show a dialog of all available commands.'), -1);
+                                                            assert.notEqual(data.indexOf('Quit the interactive shell.'), -1);
+                                                            runner.exec('quit');
+                                                            runner.once('close', function(code, signal) {
+                                                                assert.strictEqual(code, 0);
+                                                                return callback();
+                                                            });
+                                                        });
+                                                    });
+                                                });
+                                            });
+                                        });
+                                    });
+                                });
+                            });
+                        });
+                    });
+                });
+            });
+        });
+    });
+});
+
 /*!
  * Creates a runner and keeps track of it to be closed after the
  * test.

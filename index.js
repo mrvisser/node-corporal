@@ -70,13 +70,14 @@ Corporal.prototype.start = function(callback) {
  *                                                  order
  * @param   {Function}              handler         The handler function for the error
  * @param   {Error}                 handler.err     The error object that was caught
+ * @param   {CorporalSession}       handler.session The current corporal session
  * @param   {Function}              handler.next    The function to invoke when the next command can
  *                                                  be read from the user
  */
 Corporal.prototype.onCommandError = function(/*type, [codeMatch,] handler*/) {
     // Resolve type parameters
     var type = null;
-    if (_.isString(arguments[0])) {
+    if (_.isFunction(arguments[0])) {
         type = arguments[0];
     } else {
         throw new Error('Unexpected first argument type for onCommandError handler');
@@ -85,7 +86,8 @@ Corporal.prototype.onCommandError = function(/*type, [codeMatch,] handler*/) {
     // Resolve the codeMatch and handler parameters
     var codeMatch = null;
     var handler = null;
-    if (_.isFunction(arguments[1]) && _.isFunction(arguments[2])) {
+    if ((_.isString(arguments[1]) || _.isRegExp(arguments[1]) || _.isFunction(arguments[1])) &&
+        _.isFunction(arguments[2])) {
         codeMatch = arguments[1];
         handler = arguments[2];
     } else if (_.isFunction(arguments[1])) {
@@ -95,20 +97,18 @@ Corporal.prototype.onCommandError = function(/*type, [codeMatch,] handler*/) {
     }
 
     // Seed the error handlers for this type of error
-    var errorHandlers = this._errorHandlers = this._errorHandlers || {
-        'types': [],
-        'handlers': {}
-    };
+    var errorHandlers = this._errorHandlers = this._errorHandlers || [];
 
-    var handlersForType = errorHandlers.handlers[type];
+    var handlersForType = _.findWhere(errorHandlers, {'type': type});
     if (!handlersForType) {
-        errorHandlers.types.push(type);
-        handlersForType = errorHandlers.handlers[type] = {
+        handlersForType = {
+            'type': type,
             'function': [],
             'null': [],
             'regexp': [],
             'string': []
         };
+        errorHandlers.push(handlersForType);
     }
 
     if (_.isFunction(codeMatch)) {
