@@ -6,6 +6,6 @@ module.exports = {
     'invoke': function(session, args, callback) {
         var err = new Error();
         err.code = 'isastringmatch';
-        throw err;
+        return callback(err);
     }
 };

@@ -4,6 +4,6 @@ var TypeBError = require('../../util/internal/errors/TypeBError');
 module.exports = {
     'description': 'description',
     'invoke': function(session, args, callback) {
-        throw new TypeAError('isastringmatch');
+        return callback(new TypeAError('isastringmatch'));
     }
 };
