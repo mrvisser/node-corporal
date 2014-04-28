@@ -9,14 +9,15 @@ for your CLI utility.
 
 Currently:
 
-* Tab auto-complete for commands based on available commands
+* Parsing of string command input into an argv array
 * Multi-line commands
-* Custom PS1 and PS2 prompts
+* Tab auto-complete for commands based on available commands
 * API and Model for creating and loading your own commands
+* Flexible error handling
+* Custom PS1 and PS2 prompts
 * Environment support for stateful CLI sessions
 * Up / down functionality for command history
 * `clear` command to clear the terminal window
-* Flexible error handling
 
 Planned:
 
@@ -31,7 +32,11 @@ See `examples/whoami` for this tutorial.
 **Sample Setup:**
 
 ```javascript
+var colors = require('colors');
+
 var Corporal = require('corporal');
+var ValidationError = require('./errors/ValidationError');
+
 var corporal = new Corporal({
 
     // Commands will be loaded from JS files in the "commands" directory. Each command
@@ -52,6 +57,22 @@ var corporal = new Corporal({
     }
 });
 
+// Catch validation errors and give a generic output
+corporal.onCommandError(ValidationError, function(err, session, next) {
+    console.error('Validation Error: '.red + err.message);
+    console.error('');
+    console.error(err.help);
+    console.error('');
+    return next();
+});
+
+// Catch any other error that is thrown and print a stack-trace
+corporal.onCommandError(Error, function(err, session, next) {
+    console.error('An unexpected error occurred:'.red);
+    console.error(err.stack.red);
+    return next();
+});
+
 // Start the interactive prompt
 corporal.start();
 ```
@@ -62,6 +83,7 @@ corporal.start();
 
 ```javascript
 var optimist = require('optimist');
+var ValidationError = require('./errors/ValidationError');
 
 module.exports = {
 
@@ -76,9 +98,14 @@ module.exports = {
     // the array arguments that were provided to your command, however you can use whatever
     // utility you want
     'invoke': function(session, args, callback) {
-
         // Parse the arguments using optimist
         var argv = optimist.parse(args);
+
+        if (!argv._[0]) {
+            // This would be synonymous to:
+            // throw new ValidationError('Expected "name" argument', 'Usage: iam <name>');
+            return callback(new ValidationError('Expected "name" argument', 'Usage: iam <name>'));
+        }
 
         // Update the environment to indicate who the specified user now is
         session.env('me', argv._[0] || 'unknown');
