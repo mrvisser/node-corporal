@@ -41,7 +41,7 @@ Corporal.prototype.start = function(callback) {
             }
 
             // Initialize each resolved command
-            _initializeCommands(session, _.values(session.commands()), function(err) {
+            _initializeCommands(session, _.values(session.commands().get()), function(err) {
                 if (err) {
                     return callback(err);
                 }
@@ -135,7 +135,7 @@ function _resolveConsumerCommands(session, options, callback) {
         // Load the commands from the explicit commands object. We filter out any command name that
         // is specified to be "disabled" in the corporal options
         _.chain(options.commands).keys().difference(options.disabled).each(function(commandName) {
-            session.commands(commandName, options.commands[commandName]);
+            session.commands().set(commandName, options.commands[commandName]);
         });
         return callback();
     }
@@ -170,7 +170,7 @@ function _loadCommandsFromDir(session, dirPath, disabled, callback) {
 
             // Add each command to the session
             .each(function(commandName) {
-                session.commands(commandName, require(path.join(dirPath, commandName)));
+                session.commands().set(commandName, require(path.join(dirPath, commandName)));
             });
 
         return callback();

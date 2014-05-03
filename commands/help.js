@@ -33,7 +33,7 @@ module.exports = {
         var commandName = argv._[0];
 
         if (commandName) {
-            var command = session.commands(commandName);
+            var command = session.commands().get(commandName);
             if (command) {
                 console.log('');
                 console.log(command.description);
@@ -54,7 +54,7 @@ module.exports = {
 
             // Determine the width of the command name column
             var longestNameLength = 0;
-            _.chain(session.commands())
+            _.chain(session.commands().get())
                 .keys()
                 .difference(settings.hide)
                 .map(function(commandName) {
@@ -65,11 +65,11 @@ module.exports = {
                 });
 
             // Output each command (that isn't hidden from the index) to the console
-            _.chain(session.commands())
+            _.chain(session.commands().get())
                 .keys()
                 .difference(settings.hide)
                 .each(function(commandName) {
-                    var command = session.commands(commandName);
+                    var command = session.commands().get(commandName);
                     console.log(sprintf('%-' + longestNameLength + 's:  %s', commandName, command.description.split('\n')[0]));
                 });
 
