@@ -3,6 +3,14 @@
   "description": "An extensible interactive shell utility",
   "version": "0.1.0",
   "homepage": "https://github.com/mrvisser/node-corporal",
+  "keywords": [
+    "arguments",
+    "argv",
+    "command",
+    "commands",
+    "parse",
+    "shell"
+  ],
   "author": {
     "name": "Branden Visser",
     "email": "mrvisser@gmail.com"
