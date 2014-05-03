@@ -25,23 +25,44 @@ Corporal.prototype.start = function(callback) {
 
     self._options.disabled = _.isArray(self._options.disabled) ? self._options.disabled : [];
 
-    var session = new CorporalSession(env);
-
     // Load the internal commands
     var internalCommandsDir = path.join(__dirname, 'commands');
-    _loadCommandsFromDir(session, internalCommandsDir, self._options.disabled, function(err) {
+    _loadCommandsFromDir(internalCommandsDir, self._options.disabled, function(err, internalCommands) {
         if (err) {
             return callback(err);
         }
 
         // Resolve the commands provided by the consumer
-        _resolveConsumerCommands(session, self._options, function(err) {
+        _resolveConsumerCommands(self._options, function(err, consumerCommands) {
             if (err) {
                 return callback(err);
             }
 
+            // Merge the internal commands with consumer commands to get all available commands
+            var allCommands = _.extend({}, internalCommands, consumerCommands);
+
+            // Seed the command context, ensuring that our internal commands always available in all contexts
+            var commandContexts = null;
+            if (!self._options.commandContexts) {
+                // If there is no configuration for command contexts, then all commands are simply available
+                // at all times
+                commandContexts = {'*': {'commands': _.keys(allCommands)}};
+            } else {
+                // If there is a configuration for command contexts, all we need to do is make sure that the
+                // internal commands are always available (i.e., clear, help and quit)
+                commandContexts = {};
+                commandContexts['*'] = commandContexts['*'] || {};
+                commandContexts['*'].commands = commandContexts['*'].commands || [];
+                commandContexts['*'].commands = _.union(commandContexts['*'].commands, _.keys(internalCommands));
+            }
+
+            var session = new CorporalSession({'env': env, 'commandContexts': commandContexts});
+            _.each(allCommands, function(command, name) {
+                session.commands().set(name, command);
+            });
+
             // Initialize each resolved command
-            _initializeCommands(session, _.values(session.commands().get()), function(err) {
+            _initializeCommands(session, _.values(session.commands().all()), function(err) {
                 if (err) {
                     return callback(err);
                 }
@@ -127,26 +148,27 @@ Corporal.prototype.onCommandError = function(/*type, [codeMatch,] handler*/) {
 /*!
  * Given the corporal options, load the consumer commands based on the configuration.
  */
-function _resolveConsumerCommands(session, options, callback) {
+function _resolveConsumerCommands(options, callback) {
+    var commands = {};
     if (_.isString(options.commands)) {
         // Load the commands from the specified string directory path
-        return _loadCommandsFromDir(session, options.commands, options.disabled, callback);
+        return _loadCommandsFromDir(options.commands, options.disabled, callback);
     } else if (_.isObject(options.commands)) {
         // Load the commands from the explicit commands object. We filter out any command name that
         // is specified to be "disabled" in the corporal options
         _.chain(options.commands).keys().difference(options.disabled).each(function(commandName) {
-            session.commands().set(commandName, options.commands[commandName]);
+            commands[commandName] = options.commands[commandName];
         });
-        return callback();
     }
 
-    return callback();
+    return callback(null, commands);
 }
 
 /*!
  * Load commands from JS files in a directory path.
  */
-function _loadCommandsFromDir(session, dirPath, disabled, callback) {
+function _loadCommandsFromDir(dirPath, disabled, callback) {
+    var commands = {};
     fs.readdir(dirPath, function(err, fileNames) {
         if (err) {
             return callback(err);
@@ -170,10 +192,10 @@ function _loadCommandsFromDir(session, dirPath, disabled, callback) {
 
             // Add each command to the session
             .each(function(commandName) {
-                session.commands().set(commandName, require(path.join(dirPath, commandName)));
+                commands[commandName] = require(path.join(dirPath, commandName));
             });
 
-        return callback();
+        return callback(null, commands);
     });
 }
 
