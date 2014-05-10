@@ -51,6 +51,32 @@ A Command implementation is an object that contains at least 2 fields:
 
 The internal commands `clear`, `help` and `quit` provide good examples for implementing commands.
 
+### Session API
+
+The Session object is used to manipulate session information, particularly environment variables and the current command context. The Session object is provided for each command as well as handling error scenarios.
+
+Common operations:
+
+* Get the value of an environment variable
+
+    `session.env('myvariable')`
+
+* Set the value of an environment variable
+
+    `session.env('myvariable', 'myvalue')`
+
+* Quit the shell session. When invoked, this signals the command loop to exit the session rather than prompt for the next command
+
+    `session.quit()`
+
+* Get the current command context
+
+    `session.commands().ctx()`
+
+* Change the current command context, making a different set of commands available
+
+    `session.commands().ctx('newcontext')`
+
 ## Examples
 
 ### Simple prompt
