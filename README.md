@@ -36,7 +36,7 @@ new Corporal({'commands': __dirname + '/commands'}).start();
 ### Options
 
 * `commands:` A **String** that points to a directory full of JavaScript files that export commands, or an **Object** keyed by command name whose values are the command objects
-* `env`: An **Object* defining the initial environment for the interactive shell session. Commands have access to the environment throughout the session and can change state on the fly
+* `env`: An **Object** defining the initial environment for the interactive shell session. Commands have access to the environment throughout the session and can change state on the fly
 * `disabled`: An Array of Strings that define which commands should not be loaded into the interactive prompt
 * `commandContexts`: An object defining contexts that define filtered sets of commands that are available in certain contexts. See examples for how to use this
 
@@ -45,7 +45,7 @@ new Corporal({'commands': __dirname + '/commands'}).start();
 A Command implementation is an object that contains at least 2 fields:
 
 * `description` (required). A **String** that briefly defines in one sentence what the command does. This is shown in the `help` command
-* `invoke` (required). A `function(session, args, callback)` that provides the current session and the arguments with which the command was run
+* `invoke` (required). A `function(session, args, callback)` that is invoked when the command is run. The `session` is the current Session object and the `args` is an array of strings representing the argv with which the command was invoked
 * `help` (optional). A **String** that gives a more verbose usage of how to use the command. This content is shown when `help <command name>` is used
 * `init` (optional). A `function(session, callback)` that is invoked only once when the shell session has begun. It is invoked before the user is presented a prompt and as a result before any command is executed. Useful for preparing the environment with default values, if necessary
 
@@ -246,9 +246,12 @@ new Corporal({
         'ps2': '> '
     },
 
-    // Define the "auth" and "anon" contexts
+    // Define the "auth" context for commands that are only available to "authorized" users
     //  * "auth" is the only context that gives access to "say" something
     //  * the "iam" command is always available
+    //
+    // The command implementations are subsequently responsible for performing the context
+    // switches when appropriate
     'commandContexts': {
         '*': {
             'commands': ['iam']
