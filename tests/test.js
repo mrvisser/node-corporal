@@ -262,6 +262,69 @@ describe('Error Handling', function() {
     });
 });
 
+describe('Command Contexts', function() {
+    it('only makes commands available that are scoped to the current context', function(callback) {
+        var runner = _createRunner({
+            'commands': _commandDir('command-contexts'),
+            'contexts': {
+                '': ['available-in-default-context'],
+                '*': ['switch-context'],
+                'contexta': ['available-in-contexta'],
+                'contextb': ['available-in-contextb']
+            }
+        });
+
+        runner.start(function() {
+            // Ensure only the internal, * commands and those specified for the default context are available in the default context
+            runner.exec('help', function(data) {
+                assert.notEqual(data.indexOf('available-in-default-context:'), -1);
+                assert.notEqual(data.indexOf('switch-context              :'), -1);
+                assert.notEqual(data.indexOf('clear                       :'), -1);
+                assert.notEqual(data.indexOf('help                        :'), -1);
+                assert.notEqual(data.indexOf('quit                        :'), -1);
+                assert.strictEqual(data.indexOf('contexta'), -1);
+                assert.strictEqual(data.indexOf('contextb'), -1);
+
+                // Ensure we can't invoke any of the commands out of context
+                runner.exec('available-in-contexta', function(data) {
+                    assert.notEqual(data.indexOf('Invalid command'), -1);
+
+                    // Ensure we can invoke the default context command
+                    runner.exec('available-in-default-context', function(data) {
+                        assert.strictEqual(data.indexOf('Invalid command'), -1);
+
+                        // Switch contexts
+                        runner.exec('switch-context contexta', function(data) {
+
+                            // Ensure we only get internal, * and contexta commands
+                            runner.exec('help', function(data) {
+                                assert.notEqual(data.indexOf('available-in-contexta:'), -1);
+                                assert.notEqual(data.indexOf('switch-context       :'), -1);
+                                assert.notEqual(data.indexOf('clear                :'), -1);
+                                assert.notEqual(data.indexOf('help                 :'), -1);
+                                assert.notEqual(data.indexOf('quit                 :'), -1);
+                                assert.strictEqual(data.indexOf('default'), -1);
+                                assert.strictEqual(data.indexOf('contextb'), -1);
+
+                                // Ensure we can't invoke the default context command
+                                runner.exec('available-in-default-context', function(data) {
+                                    assert.notEqual(data.indexOf('Invalid command'), -1);
+
+                                    // Ensure we can now invoke contexta
+                                    runner.exec('available-in-contexta', function(data) {
+                                        assert.strictEqual(data.indexOf('Invalid command'), -1);
+                                        return callback();
+                                    });
+                                });
+                            });
+                        });
+                    });
+                });
+            });
+        });
+    });
+});
+
 /*!
  * Creates a runner and keeps track of it to be closed after the
  * test.

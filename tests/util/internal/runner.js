@@ -8,12 +8,20 @@ var Corporal = require('../../../index');
 var TypeAError = require('./errors/TypeAError');
 var TypeBError = require('./errors/TypeBError');
 
+var commandContexts = null;
+if (argv.contexts) {
+    commandContexts = {};
+    _.each(argv.contexts, function(commandNames, contextName) {
+        commandContexts[contextName] = {'commands': commandNames.split(',')};
+    });
+}
+
 var corporal = new Corporal({
     'commands': argv.commands,
+    'commandContexts': commandContexts,
     'disabled': _.isString(argv.disabled) ? argv.disabled.split(',') : null,
     'env': JSON.parse(argv.env)
 });
-
 
 /*!
  * Verify string precedence over all the things

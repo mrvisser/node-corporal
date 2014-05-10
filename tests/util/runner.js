@@ -39,6 +39,12 @@ Runner.prototype.start = function(callback) {
         args.push('--disabled', self._options.disabled.join(','));
     }
 
+    if (self._options.contexts) {
+        _.each(self._options.contexts, function(commandNames, contextName) {
+            args.push(util.format('--contexts.%s', contextName), commandNames.join(','));
+        });
+    }
+
     if (process.env['CORPORAL_TEST_VERBOSE']) {
         console.log('spawn: %s', JSON.stringify(_.union('node', args), null, 2));
     }

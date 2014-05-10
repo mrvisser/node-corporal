@@ -50,7 +50,7 @@ Corporal.prototype.start = function(callback) {
             } else {
                 // If there is a configuration for command contexts, all we need to do is make sure that the
                 // internal commands are always available (i.e., clear, help and quit)
-                commandContexts = {};
+                commandContexts = self._options.commandContexts;
                 commandContexts['*'] = commandContexts['*'] || {};
                 commandContexts['*'].commands = commandContexts['*'].commands || [];
                 commandContexts['*'].commands = _.union(commandContexts['*'].commands, _.keys(internalCommands));

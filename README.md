@@ -18,6 +18,7 @@ Currently:
 * Environment support for stateful CLI sessions
 * Up / down functionality for command history
 * `clear` command to clear the terminal window
+* Make commands only available in certain contexts
 
 Planned:
 
