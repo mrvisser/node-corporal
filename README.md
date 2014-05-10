@@ -24,26 +24,150 @@ Planned:
 
 * Ability for commands to extend auto-complete functionality for more than just command-name completion
 
+## Usage
+
+Corporal is initialized with a constructor, which takes in an options object. Once ready to start the interactive prompt, you can invoke the `start()` function for the Corporal object:
+
+```javascript
+var Corporal = require('corporal');
+new Corporal({'commands': __dirname + '/commands'}).start();
+```
+
+### Options
+
+* `commands:` A **String** that points to a directory full of JavaScript files that export commands, or an **Object** keyed by command name whose values are the command objects
+* `env`: An **Object* defining the initial environment for the interactive shell session. Commands have access to the environment throughout the session and can change state on the fly
+* `disabled`: An Array of Strings that define which commands should not be loaded into the interactive prompt
+* `commandContexts`: An object defining contexts that define filtered sets of commands that are available in certain contexts. See examples for how to use this
+
+### Commands
+
+A Command implementation is an object that contains at least 2 fields:
+
+* `description` (required). A **String** that briefly defines in one sentence what the command does. This is shown in the `help` command
+* `invoke` (required). A `function(session, args, callback)` that provides the current session and the arguments with which the command was run
+* `help` (optional). A **String** that gives a more verbose usage of how to use the command. This content is shown when `help <command name>` is used
+* `init` (optional). A `function(session, callback)` that is invoked only once when the shell session has begun. It is invoked before the user is presented a prompt and as a result before any command is executed. Useful for preparing the environment with default values, if necessary
+
+The internal commands `clear`, `help` and `quit` provide good examples for implementing commands.
+
 ## Examples
 
-### Whoami
+### Simple prompt
 
-See `examples/whoami` for this tutorial.
+Creating a prompt loop with only the core commands (`clear`, `help` and `quit`) is really easy and useless:
 
-**Sample Setup:**
+```javascript
+var Corporal = require('corporal');
+new Corporal().start();
+```
+
+### Implement a simple command
+
+Commands are JavaScript objects that contain at least a `description` and an `invoke` function.
+
+```javascript
+var Corporal = require('corporal');
+new Corporal({
+    'commands': {
+        'say': {
+            'description': 'Say something.',
+            'invoke': function(session, args, callback) {
+                console.log(args[0]);
+                callback();
+            }
+        }
+    }
+}).start();
+```
+
+```
+$ node test.js
+> help
+List of available commands:
+
+clear:  Clear the terminal window.
+help :  Show a dialog of all available commands.
+quit :  Quit the interactive shell.
+
+> quit
+$
+```
+
+### Load commands from a directory of JavaScript files
+
+Rather than declare all commands in a single file, load a directory full of JavaScript files that export a `Command` object.
+
+```javascript
+var Corporal = require('corporal');
+new Corporal({'commands': __dirname + '/commands'}).start();
+```
+
+### Error handling
+
+Handle errors that are thrown or returned from the `invoke` function.
 
 ```javascript
 var colors = require('colors');
-
 var Corporal = require('corporal');
-var ValidationError = require('./errors/ValidationError');
+var ValidationError = require('./errors/validation');
 
+// Launch a shell with a custom command that just prints what you tell to say. This
+// time, the first argument is required
 var corporal = new Corporal({
+    'commands': {
+        'say': {
+            'description': 'Say something.',
+            'invoke': function(session, args, callback) {
+                if (!args[0]) {
+                    throw new ValidationError('You must say something, anything!');
+                }
 
-    // Commands will be loaded from JS files in the "commands" directory. Each command
-    // exports an object that contains data and functions for describing and invoking
-    // the command
-    'commands': __dirname + '/commands'
+                console.log(args[0]);
+                callback();
+            }
+        }
+    }
+});
+
+// Handle any validation error that gets thrown from a command
+corporal.onCommandError(ValidationError, function(err, session, next) {
+    console.error(err.message.red);
+    next();
+});
+
+// Handle any other type of error that gets thrown from a command
+corporal.onCommandError(Error, function(err, session, next) {
+    console.error('An unexpected error occurred, quitting.'.red);
+    console.error(err.stack.red);
+
+    session.quit();
+    next();
+});
+
+// Finally start the command loop
+corporal.start();
+```
+
+### Custom PS1 and PS2
+
+Provide custom PS1 and PS2 command prompts that can be templated with `sprintf-js` using a global environment that is available throughout the shell session. This example demonstrates use of an environment variable to drive the content of the PS1 prompt.
+
+```javascript
+var Corporal = require('corporal');
+new Corporal({
+
+    // Define our command
+    'commands': {
+        'iam': {
+            'description': 'Tell the system who you are.',
+            'invoke': function(session, args, callback) {
+                // Use the session.env function to get and set environment variables
+                session.env('me', args[0]);
+                callback();
+            }
+        }
+    },
 
     // Define an initial environment
     //  * The arbitrary "me" environment variable defines who the "current user" is
@@ -52,100 +176,123 @@ var corporal = new Corporal({
     //  * The ps2 variable is used as the prompt prefix in multi-line commands. "> " is also
     //    the default value
     'env': {
-        'me': 'unknown'
-        'ps1' '%(me)s$ '.bold,
+        'me': 'unknown',
+        'ps1': '%(me)s$ '.bold,
         'ps2': '> '
     }
-});
-
-// Catch validation errors and give a generic output
-corporal.onCommandError(ValidationError, function(err, session, next) {
-    console.error('Validation Error: '.red + err.message);
-    console.error('');
-    console.error(err.help);
-    console.error('');
-    return next();
-});
-
-// Catch any other error that is thrown and print a stack-trace
-corporal.onCommandError(Error, function(err, session, next) {
-    console.error('An unexpected error occurred:'.red);
-    console.error(err.stack.red);
-    return next();
-});
-
-// Start the interactive prompt
-corporal.start();
+}).start();
 ```
 
-**Sample Command:**
-
-`commands/iam.js` command is used to set in the environment the current user. The name of the JS file will indicate what the name of the command should be:
-
-```javascript
-var optimist = require('optimist');
-var ValidationError = require('./errors/ValidationError');
-
-module.exports = {
-
-    // Required: Defines a description for the command that can be seen in command listings
-    // and help dialogs
-    'description': 'Tell the session who you are.',
-
-    // Optional: Additional text to show how the command can be used. Can be multi-line, etc...
-    'help': 'Usage: iam <name>',
-
-    // The function that actually invokes the command. Optimist is being used here to parse
-    // the array arguments that were provided to your command, however you can use whatever
-    // utility you want
-    'invoke': function(session, args, callback) {
-        // Parse the arguments using optimist
-        var argv = optimist.parse(args);
-
-        if (!argv._[0]) {
-            // This would be synonymous to:
-            // throw new ValidationError('Expected "name" argument', 'Usage: iam <name>');
-            return callback(new ValidationError('Expected "name" argument', 'Usage: iam <name>'));
-        }
-
-        // Update the environment to indicate who the specified user now is
-        session.env('me', argv._[0] || 'unknown');
-
-        // The callback always needs to be invoked to finish the command
-        return callback();
-    }
-};
 ```
-
-**Sample Usage:**
-
-```
-~/Source/node-corporal$ node examples/whoami/run.js
+$ node test.js
 unknown$ help
 List of available commands:
 
+clear:  Clear the terminal window.
 help :  Show a dialog of all available commands.
 quit :  Quit the interactive shell.
-greet:  Give a greeting to the current user.
-iam  :  Tell the session who you are.
+iam  :  Tell the system who you are.
 
-unknown$ greet
-Hello, unknown
 unknown$ iam branden
-branden$ greet
-Hello, branden
-branden$ iam \
-> \
-> steve
-steve$ help iam
-
-Tell the session who you are.
-
-Usage: iam <name>
-
-steve$ quit
+branden$ quit
 ```
 
+### Command Contexts
+
+It is possible to filter the commands available based on a custom context. For example, if your shell application requires authentication, you may want to provide some commands only to users when they are authenticated. Contexts allow you to accomplish this.
+
+```javascript
+var Corporal = require('corporal');
+new Corporal({
+
+    // Define our command
+    'commands': {
+        'iam': {
+            'description': 'Tell the system who you are.',
+            'invoke': function(session, args, callback) {
+                // Use the session.env function to get and set environment variables
+                session.env('me', args[0] || 'unknown');
+
+                if (args[0]) {
+                    // Indicate we have indicated who we are
+                    session.commands().ctx('auth');
+                } else {
+                    // Indicate we currently don't know who the user is
+                    session.commands().ctx('anon');
+                }
+
+                callback();
+            }
+        },
+        'say': {
+            'description': 'Say something as somebody.',
+            'invoke': function(session, args, callback) {
+                // Say something as the current user
+                console.log('%s: %s', session.env('me'), args[0]);
+                callback();
+            }
+        }
+    },
+
+    // Define an initial environment
+    //  * The arbitrary "me" environment variable defines who the "current user" is
+    //  * The ps1 variable pulls the current value of the "me" variable to put in the PS1 prompt
+    //  * The the "colors" module is used to provide "bold" styling on the PS1
+    //  * The ps2 variable is used as the prompt prefix in multi-line commands. "> " is also
+    //    the default value
+    'env': {
+        'me': 'unknown',
+        'ps1': '%(me)s$ '.bold,
+        'ps2': '> '
+    },
+
+    // Define the "auth" and "anon" contexts
+    //  * "auth" is the only context that gives access to "say" something
+    //  * the "iam" command is always available
+    'commandContexts': {
+        '*': {
+            'commands': ['iam']
+        },
+        'auth': {
+            'commands': ['say']
+        }
+    }
+}).start();
+```
+
+```
+$ node test.js
+unknown$ help
+List of available commands:
+
+iam  :  Tell the system who you are.
+clear:  Clear the terminal window.
+help :  Show a dialog of all available commands.
+quit :  Quit the interactive shell.
+
+unknown$ iam branden
+branden$ help
+List of available commands:
+
+say  :  Say something as somebody.
+iam  :  Tell the system who you are.
+clear:  Clear the terminal window.
+help :  Show a dialog of all available commands.
+quit :  Quit the interactive shell.
+
+branden$ say hello
+branden: hello
+branden$ iam
+unknown$ help
+List of available commands:
+
+iam  :  Tell the system who you are.
+clear:  Clear the terminal window.
+help :  Show a dialog of all available commands.
+quit :  Quit the interactive shell.
+
+unknown$ quit
+```
 
 ## License
 
