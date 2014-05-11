@@ -1,80 +1,142 @@
 var _ = require('underscore');
+var events = require('events');
 var fs = require('fs');
 var path = require('path');
+var util = require('util');
 
 var CorporalSession = require('./lib/session');
 var CorporalUtil = require('./lib/util');
 
-var Corporal = module.exports = function(options) {
-    this._options = options || {};
-};
-
 /**
- * Start the corporal command session. The callback is invoked when the user completes the session
- * with the quit command.
+ * Create a corporal object that can be used to start a prompt loop or invoke adhoc commands.
+ *
+ * @param   {Object}            options                     The corporal options
+ * @param   {String|Object}     options.commands            A string pointing to a directory from
+ *                                                          which to load commands, or an object
+ *                                                          keyed by command name whose value are
+ *                                                          command implementation objects
+ * @param   {String[]}          [options.disabled]          A list of command names to disable
+ *                                                          for the session
+ * @param   {Object}            [options.env]               The initial environment to use for the
+ *                                                          session
+ * @param   {Object}            [options.commandContexts]   The command contexts to be made
+ *                                                          available throughout the session. The
+ *                                                          initial context name/key is the empty
+ *                                                          string
+ * @param   {Object}            [options.streams]           An object holding the different streams
+ *                                                          to use for input and output
+ * @param   {Stream}            [options.streams.stdout]    The standard output stream
+ * @param   {Stream}            [options.streams.stderr]    The standard error stream
+ * @param   {Stream}            [options.streams.stdin]     The standard input stream
  */
-Corporal.prototype.start = function(callback) {
+var Corporal = module.exports = function(options) {
     var self = this;
 
-    callback = callback || function() {};
-    var env = _.defaults({}, self._options.env, {
+    options = _.extend({}, options);
+    options.disabled = options.disabled || [];
+    options.env = options.env || {};
+
+    _.defaults(options.env, {
         'corporal_command_settings': {},
         'ps1': '> '.bold,
         'ps2': '> '
     });
 
-    self._options.disabled = _.isArray(self._options.disabled) ? self._options.disabled : [];
-
-    // Load the internal commands
     var internalCommandsDir = path.join(__dirname, 'commands');
-    _loadCommandsFromDir(internalCommandsDir, self._options.disabled, function(err, internalCommands) {
+    _loadCommandsFromDir(internalCommandsDir, options.disabled, function(err, internalCommands) {
         if (err) {
-            return callback(err);
+            return self.emit('error', err);
         }
 
         // Resolve the commands provided by the consumer
-        _resolveConsumerCommands(self._options, function(err, consumerCommands) {
+        _resolveConsumerCommands(options, function(err, consumerCommands) {
             if (err) {
-                return callback(err);
+                return self.emit('error', err);
             }
 
             // Merge the internal commands with consumer commands to get all available commands
             var allCommands = _.extend({}, internalCommands, consumerCommands);
 
-            // Seed the command context, ensuring that our internal commands always available in all contexts
+            // Seed the command context, ensuring that our internal commands always available in all
+            // contexts
             var commandContexts = null;
-            if (!self._options.commandContexts) {
-                // If there is no configuration for command contexts, then all commands are simply available
-                // at all times
+            if (!options.commandContexts) {
+                // If there is no configuration for command contexts, then all commands are simply
+                // available at all times
                 commandContexts = {'*': {'commands': _.keys(allCommands)}};
             } else {
-                // If there is a configuration for command contexts, all we need to do is make sure that the
-                // internal commands are always available (i.e., clear, help and quit)
-                commandContexts = self._options.commandContexts;
+                // If there is a configuration for command contexts, all we need to do is make sure
+                // that the internal commands are always available (i.e., clear, help and quit)
+                commandContexts = options.commandContexts;
                 commandContexts['*'] = commandContexts['*'] || {};
                 commandContexts['*'].commands = commandContexts['*'].commands || [];
                 commandContexts['*'].commands = _.union(commandContexts['*'].commands, _.keys(internalCommands));
             }
 
-            var session = new CorporalSession({'env': env, 'commandContexts': commandContexts});
+            self._session = new CorporalSession({
+                'env': options.env,
+                'commandContexts': commandContexts,
+                'stdout': options.stdout,
+                'stderr': options.stderr,
+                'stdin': options.stdin
+            });
+
             _.each(allCommands, function(command, name) {
-                session.commands().set(name, command);
+                self._session.commands().set(name, command);
             });
 
             // Initialize each resolved command
-            _initializeCommands(session, _.values(session.commands().all()), function(err) {
+            _initializeCommands(self._session, function(err) {
                 if (err) {
-                    return callback(err);
+                    return self.emit('error', err);
                 }
 
-                // Apply all the error handlers that have been added
-                session.errorHandlers(self._errorHandlers);
-
-                // Begin the command loop
-                return CorporalUtil.doCommandLoop(session, callback);
+                return self.emit('load');
             });
         });
     });
+};
+util.inherits(Corporal, events.EventEmitter);
+
+/**
+ * Start a prompt loop for the user
+ *
+ * @param   {Function}  [callback]  Invoked when the user quits the prompt session
+ */
+Corporal.prototype.loop = function(callback) {
+    callback = callback || function() {};
+
+    // Apply all known error handlers to the session
+    this._session.errorHandlers(this._errorHandlers);
+
+    // Begin the command loop
+    return CorporalUtil.doCommandLoop(this._session, callback);
+};
+
+/**
+ * Invoke a command programatically with the current session
+ *
+ * @param   {String}    commandName     The name of the command to invoke
+ * @param   {String[]}  [args]          The array of arguments (i.e., argv) with which to invoke the
+ *                                      command
+ * @param   {Function}  [callback]      Invoked when the command completes
+ */
+Corporal.prototype.exec = function(commandName, args, callback) {
+    if (_.isArray(args)) {
+        callback = callback || function() {};
+    } else if (_.isFunction(args)) {
+        args = [];
+        callback = args;
+    } else {
+        args = [];
+        callback = callback || function() {};
+    }
+
+    // Apply all known error handlers to the session
+    this._session.errorHandlers(this._errorHandlers);
+
+    // Invoke the command with the current session
+    return CorporalUtil.invokeCommand(this._session, commandName, args, callback);
 };
 
 /**
@@ -205,16 +267,17 @@ function _loadCommandsFromDir(dirPath, disabled, callback) {
 /*!
  * Initialize each command in the given list of commands
  */
-function _initializeCommands(session, commands, callback) {
-    if (_.isEmpty(commands)) {
+function _initializeCommands(session, callback, _commands) {
+    _commands = _commands || _.values(session.commands().all());
+    if (_.isEmpty(_commands)) {
         return callback();
     }
 
     // Get the next command to initialize
-    var command = commands.pop();
+    var command = _commands.pop();
     if (!_.isFunction(command.init)) {
         // If it does not have the optional init function we just skip it
-        return _initializeCommands(session, commands, callback);
+        return _initializeCommands(session, callback, _commands);
     }
 
     // Initialize the command
@@ -224,6 +287,6 @@ function _initializeCommands(session, commands, callback) {
         }
 
         // Recursively move on to the next command
-        return _initializeCommands(session, commands, callback);
+        return _initializeCommands(session, callback, _commands);
     });
 }

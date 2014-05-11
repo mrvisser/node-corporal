@@ -23,4 +23,4 @@ var corporal = new Corporal({
 });
 
 // Start the interactive prompt
-corporal.start();
+corporal.on('load', corporal.loop);

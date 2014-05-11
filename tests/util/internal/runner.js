@@ -174,10 +174,12 @@ corporal.onCommandError(Error, function(err, session, next) {
     return next();
 });
 
-corporal.start(function(err) {
-    if (err) {
-        return process.exit(1);
-    }
+corporal.on('load', function() {
+    corporal.loop(function(err) {
+        if (err) {
+            return process.exit(1);
+        }
 
-    return process.exit(0);
+        return process.exit(0);
+    });
 });

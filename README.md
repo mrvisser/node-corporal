@@ -30,7 +30,8 @@ Corporal is initialized with a constructor, which takes in an options object. On
 
 ```javascript
 var Corporal = require('corporal');
-new Corporal({'commands': __dirname + '/commands'}).start();
+var corporal = new Corporal({'commands': __dirname + '/commands'});
+corporal.on('load', corporal.start);
 ```
 
 ### Options
@@ -93,7 +94,8 @@ Creating a prompt loop with only the core commands (`clear`, `help` and `quit`) 
 
 ```javascript
 var Corporal = require('corporal');
-new Corporal().start();
+var corporal = new Corporal();
+corporal.on('load', corporal.start);
 ```
 
 ### Implement a simple command
@@ -102,7 +104,7 @@ Commands are JavaScript objects that contain at least a `description` and an `in
 
 ```javascript
 var Corporal = require('corporal');
-new Corporal({
+var corporal = new Corporal({
     'commands': {
         'say': {
             'description': 'Say something.',
@@ -112,7 +114,8 @@ new Corporal({
             }
         }
     }
-}).start();
+});
+corporal.on('load', corporal.start);
 ```
 
 ```
@@ -180,7 +183,7 @@ corporal.onCommandError(Error, function(err, session, next) {
 });
 
 // Finally start the command loop
-corporal.start();
+corporal.on('load', corporal.start);
 ```
 
 ### Custom PS1 and PS2
@@ -189,7 +192,7 @@ Provide custom PS1 and PS2 command prompts that can be templated with `sprintf-j
 
 ```javascript
 var Corporal = require('corporal');
-new Corporal({
+var corporal = new Corporal({
 
     // Define our command
     'commands': {
@@ -214,7 +217,9 @@ new Corporal({
         'ps1': '%(me)s$ '.bold,
         'ps2': '> '
     }
-}).start();
+});
+
+corporal.on('load', corporal.start);
 ```
 
 ```
@@ -237,7 +242,7 @@ It is possible to filter the commands available based on a custom context. For e
 
 ```javascript
 var Corporal = require('corporal');
-new Corporal({
+var corporal = new Corporal({
 
     // Define our command
     'commands': {
@@ -294,7 +299,9 @@ new Corporal({
             'commands': ['say']
         }
     }
-}).start();
+});
+
+corporal.on('load', corporal.start);
 ```
 
 ```
