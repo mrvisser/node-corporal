@@ -77,6 +77,14 @@ Common operations:
 
     `session.commands().ctx('newcontext')`
 
+* Get the Standard Output stream (when running in different modes, it may not always be `process.stdout`)
+
+    `session.stdout()`
+
+* Get the Standard Error stream (when running in different modes, it may not always be `process.stderr`)
+
+    `session.stderr()`
+
 ## Examples
 
 ### Simple prompt
@@ -99,7 +107,7 @@ new Corporal({
         'say': {
             'description': 'Say something.',
             'invoke': function(session, args, callback) {
-                console.log(args[0]);
+                session.stdout().write(args[0] + '\n');
                 callback();
             }
         }
@@ -149,7 +157,7 @@ var corporal = new Corporal({
                     throw new ValidationError('You must say something, anything!');
                 }
 
-                console.log(args[0]);
+                session.stdout().write(args[0] + '\n');
                 callback();
             }
         }
@@ -158,14 +166,14 @@ var corporal = new Corporal({
 
 // Handle any validation error that gets thrown from a command
 corporal.onCommandError(ValidationError, function(err, session, next) {
-    console.error(err.message.red);
+    session.stderr().write(err.message.red + '\n');
     next();
 });
 
 // Handle any other type of error that gets thrown from a command
 corporal.onCommandError(Error, function(err, session, next) {
-    console.error('An unexpected error occurred, quitting.'.red);
-    console.error(err.stack.red);
+    session.stderr().write('An unexpected error occurred, quitting.'.red + '\n');
+    session.stderr().write(err.stack.red + '\n');
 
     session.quit();
     next();
@@ -254,7 +262,7 @@ new Corporal({
             'description': 'Say something as somebody.',
             'invoke': function(session, args, callback) {
                 // Say something as the current user
-                console.log('%s: %s', session.env('me'), args[0]);
+                session.stdout().write(util.format('%s: %s\n', session.env('me'), args[0]));
                 callback();
             }
         }

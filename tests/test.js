@@ -24,11 +24,12 @@ describe('Command Loading', function() {
     it('loads commands from a directory', function(callback) {
         var runner = _createRunner({'commands': _commandDir('loads-commands-from-a-directory')});
         runner.start(function() {
-            runner.exec('help', function(data) {
-                assert.notEqual(data.indexOf('help    :  Show a dialog of all available commands.'), -1);
-                assert.notEqual(data.indexOf('quit    :  Quit the interactive shell.'), -1);
-                assert.notEqual(data.indexOf('command1:  command1.'), -1);
-                assert.notEqual(data.indexOf('command2:  command2.'), -1);
+            runner.exec('help', function(stdout, stderr) {
+                assert.ok(!stderr);
+                assert.notEqual(stdout.indexOf('help    :  Show a dialog of all available commands.'), -1);
+                assert.notEqual(stdout.indexOf('quit    :  Quit the interactive shell.'), -1);
+                assert.notEqual(stdout.indexOf('command1:  command1.'), -1);
+                assert.notEqual(stdout.indexOf('command2:  command2.'), -1);
                 return callback();
             });
         });
@@ -75,9 +76,10 @@ describe('Command Loading', function() {
             'disabled': ['no-invoke-method']
         });
         runner1.start(function() {
-            runner1.exec('help', function(data) {
-                assert.strictEqual(data.indexOf('no-invoke-method'), -1);
-                assert.notEqual(data.indexOf('command1:  command1.'), -1);
+            runner1.exec('help', function(stdout, stderr) {
+                assert.ok(!stderr);
+                assert.strictEqual(stdout.indexOf('no-invoke-method'), -1);
+                assert.notEqual(stdout.indexOf('command1:  command1.'), -1);
 
                 // Load another one, but disable both clear and no-invoke-method
                 var runner2 = _createRunner({
@@ -85,10 +87,11 @@ describe('Command Loading', function() {
                     'disabled': ['clear', 'no-invoke-method']
                 });
                 runner2.start(function() {
-                    runner2.exec('help', function(data) {
-                        assert.strictEqual(data.indexOf('clear'), -1);
-                        assert.strictEqual(data.indexOf('no-invoke-method'), -1);
-                        assert.notEqual(data.indexOf('command1:  command1.'), -1);
+                    runner2.exec('help', function(stdout) {
+                        assert.ok(!stderr);
+                        assert.strictEqual(stdout.indexOf('clear'), -1);
+                        assert.strictEqual(stdout.indexOf('no-invoke-method'), -1);
+                        assert.notEqual(stdout.indexOf('command1:  command1.'), -1);
                         return callback();
                     });
                 });
@@ -104,9 +107,10 @@ describe('Built-In Commands', function() {
         it('provides an error and lists commands when a non-existing command is entered', function(callback) {
             var runner = _createRunner();
             runner.start(function() {
-                runner.exec('bleh', function(data) {
-                    assert.notEqual(data.indexOf('Invalid command:'), -1);
-                    assert.notEqual(data.indexOf('bleh'), -1);
+                runner.exec('bleh', function(stdout, stderr) {
+                    assert.ok(!stdout);
+                    assert.notEqual(stderr.indexOf('Invalid command:'), -1);
+                    assert.notEqual(stderr.indexOf('bleh'), -1);
                     return callback();
                 });
             });
@@ -118,8 +122,9 @@ describe('Built-In Commands', function() {
         it('executes the clear-screen control characters when invoked', function(callback) {
             var runner = _createRunner();
             runner.start(function() {
-                runner.exec('clear', function(data) {
-                    assert.strictEqual(data, '\u001B[2J\u001B[0;0f');
+                runner.exec('clear', function(stdout, stderr) {
+                    assert.ok(!stderr);
+                    assert.strictEqual(stdout, '\u001B[2J\u001B[0;0f');
                     return callback();
                 });
             });
@@ -131,10 +136,11 @@ describe('Built-In Commands', function() {
         it('lists the help and quit command when run without arguments', function(callback) {
             var runner = _createRunner();
             runner.start(function() {
-                runner.exec('help', function(data) {
-                    assert.notEqual(data.indexOf('clear:  Clear the terminal window.'), -1);
-                    assert.notEqual(data.indexOf('help :  Show a dialog of all available commands.'), -1);
-                    assert.notEqual(data.indexOf('quit :  Quit the interactive shell.'), -1);
+                runner.exec('help', function(stdout, stderr) {
+                    assert.ok(!stderr);
+                    assert.notEqual(stdout.indexOf('clear:  Clear the terminal window.'), -1);
+                    assert.notEqual(stdout.indexOf('help :  Show a dialog of all available commands.'), -1);
+                    assert.notEqual(stdout.indexOf('quit :  Quit the interactive shell.'), -1);
                     return callback();
                 });
             });
@@ -143,8 +149,9 @@ describe('Built-In Commands', function() {
         it('lists the help and usage of the quit command', function(callback) {
             var runner = _createRunner();
             runner.start(function() {
-                runner.exec('help quit', function(data) {
-                    assert.notEqual(data.indexOf('Quit the interactive shell.'), -1);
+                runner.exec('help quit', function(stdout, stderr) {
+                    assert.ok(!stderr);
+                    assert.notEqual(stdout.indexOf('Quit the interactive shell.'), -1);
                     return callback();
                 });
             });
@@ -153,9 +160,10 @@ describe('Built-In Commands', function() {
         it('lists the help and usage of the help command', function(callback) {
             var runner = _createRunner();
             runner.start(function() {
-                runner.exec('help help', function(data) {
-                    assert.notEqual(data.indexOf('Show a dialog of all available commands.'), -1);
-                    assert.notEqual(data.indexOf('Usage: help [<command>]'), -1);
+                runner.exec('help help', function(stdout, stderr) {
+                    assert.ok(!stderr);
+                    assert.notEqual(stdout.indexOf('Show a dialog of all available commands.'), -1);
+                    assert.notEqual(stdout.indexOf('Usage: help [<command>]'), -1);
                     return callback();
                 });
             });
@@ -173,17 +181,20 @@ describe('Built-In Commands', function() {
                 }
             });
             runner.start(function() {
-                runner.exec('help', function(data) {
+                runner.exec('help', function(stdout, stderr) {
+                    assert.ok(!stderr);
+
                     // Ensure it shows help and quit
-                    assert.notEqual(data.indexOf('help:  Show a dialog of all available commands.'), -1);
-                    assert.notEqual(data.indexOf('quit:  Quit the interactive shell.'), -1);
+                    assert.notEqual(stdout.indexOf('help:  Show a dialog of all available commands.'), -1);
+                    assert.notEqual(stdout.indexOf('quit:  Quit the interactive shell.'), -1);
 
                     // Ensure it does not show clear
-                    assert.strictEqual(data.indexOf('clear'), -1);
+                    assert.strictEqual(stdout.indexOf('clear'), -1);
 
                     // Ensure it does show the help for clear when specifically requested
-                    runner.exec('help clear', function(data) {
-                        assert.notEqual(data.indexOf('Clear the terminal window.'), -1);
+                    runner.exec('help clear', function(stdout, stderr) {
+                        assert.ok(!stderr);
+                        assert.notEqual(stdout.indexOf('Clear the terminal window.'), -1);
                         return callback();
                     });
                 });
@@ -213,34 +224,34 @@ describe('Error Handling', function() {
         runner.start(function() {
 
             // Verify all precedence use-cases based on error type and code
-            runner.exec('throw-typea-stringmatch', function(data) {
-                assert.strictEqual(data, 'TypeAError: isastringmatch\n');
-                runner.exec('throw-typea-regexpmatch', function(data) {
-                    assert.strictEqual(data, 'TypeAError: isaregexpmatch\n');
-                    runner.exec('throw-typea-functionmatch', function(data) {
-                        assert.strictEqual(data, 'TypeAError: isafunctionmatch\n');
-                        runner.exec('throw-typea-nomatch', function(data) {
-                            assert.strictEqual(data, 'TypeAError: isanullmatch 0\n');
-                            runner.exec('throw-typea-nocode', function(data) {
-                                assert.strictEqual(data, 'TypeAError: isanullmatch 0\n');
-                                runner.exec('throw-typea-stringmatch-ordermatters', function(data) {
-                                    assert.strictEqual(data, 'TypeAError: teststringprecedence 0\n');
-                                    runner.exec('throw-typea-regexpmatch-ordermatters', function(data) {
-                                        assert.strictEqual(data, 'TypeAError: testregexpprecedence 0\n');
-                                        runner.exec('throw-typea-functionmatch-ordermatters', function(data) {
-                                            assert.strictEqual(data, 'TypeAError: testfunctionprecedence 0\n');
-                                            runner.exec('throw-typeb-stringmatch', function(data) {
-                                                assert.strictEqual(data, 'TypeBError: isastringmatch\n');
-                                                runner.exec('throw-error-stringmatch', function(data) {
-                                                    assert.strictEqual(data, 'Error: isastringmatch\n');
-                                                    runner.exec('throw-catchall', function(data) {
-                                                        assert.strictEqual(data, 'Error: catchall\n');
+            runner.exec('throw-typea-stringmatch', function(stdout) {
+                assert.strictEqual(stdout, 'TypeAError: isastringmatch\n');
+                runner.exec('throw-typea-regexpmatch', function(stdout) {
+                    assert.strictEqual(stdout, 'TypeAError: isaregexpmatch\n');
+                    runner.exec('throw-typea-functionmatch', function(stdout) {
+                        assert.strictEqual(stdout, 'TypeAError: isafunctionmatch\n');
+                        runner.exec('throw-typea-nomatch', function(stdout) {
+                            assert.strictEqual(stdout, 'TypeAError: isanullmatch 0\n');
+                            runner.exec('throw-typea-nocode', function(stdout) {
+                                assert.strictEqual(stdout, 'TypeAError: isanullmatch 0\n');
+                                runner.exec('throw-typea-stringmatch-ordermatters', function(stdout) {
+                                    assert.strictEqual(stdout, 'TypeAError: teststringprecedence 0\n');
+                                    runner.exec('throw-typea-regexpmatch-ordermatters', function(stdout) {
+                                        assert.strictEqual(stdout, 'TypeAError: testregexpprecedence 0\n');
+                                        runner.exec('throw-typea-functionmatch-ordermatters', function(stdout) {
+                                            assert.strictEqual(stdout, 'TypeAError: testfunctionprecedence 0\n');
+                                            runner.exec('throw-typeb-stringmatch', function(stdout) {
+                                                assert.strictEqual(stdout, 'TypeBError: isastringmatch\n');
+                                                runner.exec('throw-error-stringmatch', function(stdout) {
+                                                    assert.strictEqual(stdout, 'Error: isastringmatch\n');
+                                                    runner.exec('throw-catchall', function(stdout) {
+                                                        assert.strictEqual(stdout, 'Error: catchall\n');
 
                                                         // Ensure we can still somewhat operate and exit properly
-                                                        runner.exec('help', function(data) {
-                                                            assert.notEqual(data.indexOf('Clear the terminal window.'), -1);
-                                                            assert.notEqual(data.indexOf('Show a dialog of all available commands.'), -1);
-                                                            assert.notEqual(data.indexOf('Quit the interactive shell.'), -1);
+                                                        runner.exec('help', function(stdout) {
+                                                            assert.notEqual(stdout.indexOf('Clear the terminal window.'), -1);
+                                                            assert.notEqual(stdout.indexOf('Show a dialog of all available commands.'), -1);
+                                                            assert.notEqual(stdout.indexOf('Quit the interactive shell.'), -1);
                                                             runner.exec('quit');
                                                             runner.once('close', function(code, signal) {
                                                                 assert.strictEqual(code, 0);
@@ -276,43 +287,48 @@ describe('Command Contexts', function() {
 
         runner.start(function() {
             // Ensure only the internal, * commands and those specified for the default context are available in the default context
-            runner.exec('help', function(data) {
-                assert.notEqual(data.indexOf('available-in-default-context:'), -1);
-                assert.notEqual(data.indexOf('switch-context              :'), -1);
-                assert.notEqual(data.indexOf('clear                       :'), -1);
-                assert.notEqual(data.indexOf('help                        :'), -1);
-                assert.notEqual(data.indexOf('quit                        :'), -1);
-                assert.strictEqual(data.indexOf('contexta'), -1);
-                assert.strictEqual(data.indexOf('contextb'), -1);
+            runner.exec('help', function(stdout, stderr) {
+                assert.ok(!stderr);
+                assert.notEqual(stdout.indexOf('available-in-default-context:'), -1);
+                assert.notEqual(stdout.indexOf('switch-context              :'), -1);
+                assert.notEqual(stdout.indexOf('clear                       :'), -1);
+                assert.notEqual(stdout.indexOf('help                        :'), -1);
+                assert.notEqual(stdout.indexOf('quit                        :'), -1);
+                assert.strictEqual(stdout.indexOf('contexta'), -1);
+                assert.strictEqual(stdout.indexOf('contextb'), -1);
 
                 // Ensure we can't invoke any of the commands out of context
-                runner.exec('available-in-contexta', function(data) {
-                    assert.notEqual(data.indexOf('Invalid command'), -1);
+                runner.exec('available-in-contexta', function(stdout, stderr) {
+                    assert.ok(!stdout);
+                    assert.notEqual(stderr.indexOf('Invalid command'), -1);
 
                     // Ensure we can invoke the default context command
-                    runner.exec('available-in-default-context', function(data) {
-                        assert.strictEqual(data.indexOf('Invalid command'), -1);
+                    runner.exec('available-in-default-context', function(stdout, stderr) {
+                        assert.ok(!stderr);
 
                         // Switch contexts
-                        runner.exec('switch-context contexta', function(data) {
+                        runner.exec('switch-context contexta', function(stdout, stderr) {
 
                             // Ensure we only get internal, * and contexta commands
-                            runner.exec('help', function(data) {
-                                assert.notEqual(data.indexOf('available-in-contexta:'), -1);
-                                assert.notEqual(data.indexOf('switch-context       :'), -1);
-                                assert.notEqual(data.indexOf('clear                :'), -1);
-                                assert.notEqual(data.indexOf('help                 :'), -1);
-                                assert.notEqual(data.indexOf('quit                 :'), -1);
-                                assert.strictEqual(data.indexOf('default'), -1);
-                                assert.strictEqual(data.indexOf('contextb'), -1);
+                            runner.exec('help', function(stdout, stderr) {
+                                assert.ok(!stderr);
+                                assert.notEqual(stdout.indexOf('available-in-contexta:'), -1);
+                                assert.notEqual(stdout.indexOf('switch-context       :'), -1);
+                                assert.notEqual(stdout.indexOf('clear                :'), -1);
+                                assert.notEqual(stdout.indexOf('help                 :'), -1);
+                                assert.notEqual(stdout.indexOf('quit                 :'), -1);
+                                assert.strictEqual(stdout.indexOf('default'), -1);
+                                assert.strictEqual(stdout.indexOf('contextb'), -1);
 
                                 // Ensure we can't invoke the default context command
-                                runner.exec('available-in-default-context', function(data) {
-                                    assert.notEqual(data.indexOf('Invalid command'), -1);
+                                runner.exec('available-in-default-context', function(stdout, stderr) {
+                                    assert.ok(!stdout);
+                                    assert.notEqual(stderr.indexOf('Invalid command'), -1);
 
                                     // Ensure we can now invoke contexta
-                                    runner.exec('available-in-contexta', function(data) {
-                                        assert.strictEqual(data.indexOf('Invalid command'), -1);
+                                    runner.exec('available-in-contexta', function(stdout, stderr) {
+                                        assert.ok(!stderr);
+
                                         return callback();
                                     });
                                 });

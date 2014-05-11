@@ -32,23 +32,30 @@ module.exports = {
         var argv = _getOptimist().parse(args);
         var commandName = argv._[0];
 
+        // A hidden ability of the `help` command is to output standard output on
+        // stderr. Really only useful for API-level interaction, so it's not
+        // advertised in the user-facing help
+        var out = (argv['stderr']) ? session.stderr() : session.stdout();
+
         if (commandName) {
             var command = session.commands().get(commandName);
             if (command) {
-                console.log('');
-                console.log(command.description);
-                console.log('');
+                out.write('\n');
+                out.write(command.description + '\n');
+                out.write('\n');
 
                 if (_.isString(command.help)) {
-                    console.log(command.help);
-                    console.log('');
+                    out.write(command.help + '\n');
+                    out.write('\n');
                 }
             } else {
-                console.log('No command found with name: "%s"', commandName);
+                // When the command name was wrong, it always outputs on stderr, not the
+                // suggested output stream
+                session.stderr().write('No command found with name: "' + commandName + '"\n');
             }
         } else {
-            console.log('List of available commands:');
-            console.log('');
+            out.write('List of available commands:\n');
+            out.write('\n');
 
             var settings = session.env('corporal_command_settings').help;
 
@@ -64,16 +71,17 @@ module.exports = {
                     longestNameLength = Math.max(currentLength, longestNameLength);
                 });
 
-            // Output each command (that isn't hidden from the index) to the console
+            // Output each command that isn't hidden from the index
             _.chain(session.commands().get())
                 .keys()
                 .difference(settings.hide)
                 .each(function(commandName) {
                     var command = session.commands().get(commandName);
-                    console.log(sprintf('%-' + longestNameLength + 's:  %s', commandName, command.description.split('\n')[0]));
+                    out.write(sprintf('%-' + longestNameLength + 's:  %s', commandName, command.description.split('\n')[0]));
+                    out.write('\n');
                 });
 
-            console.log('');
+            out.write('\n');
         }
 
         return callback();

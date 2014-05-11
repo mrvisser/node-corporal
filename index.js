@@ -67,8 +67,11 @@ Corporal.prototype.start = function(callback) {
                     return callback(err);
                 }
 
+                // Apply all the error handlers that have been added
+                session.errorHandlers(self._errorHandlers);
+
                 // Begin the command loop
-                return CorporalUtil.doCommandLoop(session, self._errorHandlers, callback);
+                return CorporalUtil.doCommandLoop(session, callback);
             });
         });
     });

@@ -68,7 +68,7 @@ Runner.prototype.start = function(callback) {
     self._child.on('close', function(code, signal) { self.emit('close', code, signal); });
 
     // When the next prompt occurs, return to the caller
-    self._whenPrompt(function(data) {
+    self._whenPrompt(function(stdout, stderr) {
         return callback();
     });
 };
@@ -89,18 +89,28 @@ Runner.prototype.exec = function(str, callback) {
 Runner.prototype._whenPrompt = function(callback) {
     var self = this;
 
-    var _data = '';
-    var _onData = function(data) {
-        var splitData = data.toString().split(self._options.env.ps1);
-        _data += splitData[0];
-        if (splitData.length === 1) {
-            return self._child.stdout.once('data', _onData);
-        }
+    var _stderr = '';
+    var _stdout = '';
 
-        return callback(_data);
+    var _onStderr = function(data) {
+        _stderr += data;
     };
 
-    return self._child.stdout.once('data', _onData);
+    var _onStdout = function(data) {
+        var splitData = data.toString().split(self._options.env.ps1);
+        _stdout += splitData[0];
+        if (splitData.length === 1) {
+            return self._child.stdout.once('data', _onStdout);
+        }
+
+        // We got the next prompt, so command is complete and we return to the caller
+        self._child.stderr.removeListener('data', _onStderr);
+        return callback(_stdout, _stderr);
+    };
+
+    // Apply the listeners to listen for command execution
+    self._child.stderr.on('data', _onStderr);
+    self._child.stdout.once('data', _onStdout);
 };
 
 /**
