@@ -85,6 +85,19 @@ module.exports = {
         }
 
         return callback();
+    },
+    'autocomplete': function(session, args, callback) {
+        if (args.length !== 1) {
+            return callback();
+        }
+
+        // Filter by command names
+        return callback(null, _.chain(session.commands().get())
+            .keys()
+            .filter(function(commandName) {
+                return (commandName.indexOf(args[0]) === 0);
+            })
+            .value());
     }
 };
 

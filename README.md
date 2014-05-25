@@ -11,7 +11,8 @@ Currently:
 
 * Parsing of string command input into an argv array
 * Multi-line commands
-* Tab auto-complete for commands based on available commands
+* Tab auto-complete to choose command to run
+* Custom tab auto-complete implementation for command-specific arguments
 * API and Model for creating and loading your own commands
 * Flexible error handling
 * Custom PS1 and PS2 prompts
@@ -235,6 +236,12 @@ iam  :  Tell the system who you are.
 unknown$ iam branden
 branden$ quit
 ```
+
+### Custom Auto-complete
+
+It is possible to implement auto-complete for your custom commands. Provide an `autocomplete` function in your command implementation that takes a `session`, `args` array and `callback([err], [replacementsArray])`.
+
+See the [readline auto-complete explanation](https://github.com/mrvisser/node-readcommand#auto-complete) for more details, and the [help command](https://github.com/mrvisser/node-corporal/blob/master/commands/help.js) contains a reference implementation that returns auto-completions for command names for which to show help.
 
 ### Command Contexts
 
