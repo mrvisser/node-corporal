@@ -25,11 +25,11 @@
   },
   "main": "./index.js",
   "dependencies": {
-    "colors": "latest",
-    "optimist": "latest",
-    "readcommand": "latest",
-    "sprintf-js": "latest",
-    "underscore": "latest"
+    "colors": "0.6.x",
+    "optimist": "0.6.x",
+    "readcommand": "0.2.x",
+    "sprintf-js": "0.0.x",
+    "underscore": "1.6.x"
   },
   "devDependencies": {
     "grunt": "latest",
