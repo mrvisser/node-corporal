@@ -32,7 +32,7 @@ Corporal is initialized with a constructor, which takes in an options object. On
 ```javascript
 var Corporal = require('corporal');
 var corporal = new Corporal({'commands': __dirname + '/commands'});
-corporal.on('load', corporal.start);
+corporal.on('load', corporal.loop);
 ```
 
 ### Options
