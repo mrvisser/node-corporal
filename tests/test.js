@@ -117,6 +117,22 @@ describe('Built-In Commands', function() {
         });
     });
 
+
+    describe('commented', function() {
+
+      it('ignores commands starting with a hash', function(callback) {
+        var runner = _createRunner();
+        runner.start(function() {
+          runner.exec('  # bleh', function(stdout, stderr) {
+            assert.ok(!stdout);
+            assert.ok(!stderr);
+            return callback();
+          });
+        });
+      });
+    });
+
+
     describe('clear', function() {
 
         it('executes the clear-screen control characters when invoked', function(callback) {
