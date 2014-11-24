@@ -24,6 +24,9 @@
     "url": "https://github.com/mrvisser/node-corporal/issues"
   },
   "main": "./index.js",
+  "scripts": {
+    "test": "node -e \"require('grunt').tasks(['mochaTest']);\""
+  },
   "dependencies": {
     "colors": "0.6.x",
     "optimist": "0.6.x",
