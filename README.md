@@ -96,7 +96,7 @@ Creating a prompt loop with only the core commands (`clear`, `help` and `quit`) 
 ```javascript
 var Corporal = require('corporal');
 var corporal = new Corporal();
-corporal.on('load', corporal.start);
+corporal.on('load', corporal.loop);
 ```
 
 ### Implement a simple command
@@ -116,7 +116,7 @@ var corporal = new Corporal({
         }
     }
 });
-corporal.on('load', corporal.start);
+corporal.on('load', corporal.loop);
 ```
 
 ```
@@ -138,7 +138,7 @@ Rather than declare all commands in a single file, load a directory full of Java
 
 ```javascript
 var Corporal = require('corporal');
-new Corporal({'commands': __dirname + '/commands'}).start();
+new Corporal({'commands': __dirname + '/commands'}).loop();
 ```
 
 ### Error handling
@@ -184,7 +184,7 @@ corporal.onCommandError(Error, function(err, session, next) {
 });
 
 // Finally start the command loop
-corporal.on('load', corporal.start);
+corporal.on('load', corporal.loop);
 ```
 
 ### Custom PS1 and PS2
@@ -220,7 +220,7 @@ var corporal = new Corporal({
     }
 });
 
-corporal.on('load', corporal.start);
+corporal.on('load', corporal.loop);
 ```
 
 ```
@@ -308,7 +308,7 @@ var corporal = new Corporal({
     }
 });
 
-corporal.on('load', corporal.start);
+corporal.on('load', corporal.loop);
 ```
 
 ```
