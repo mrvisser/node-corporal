@@ -23,8 +23,6 @@ var CorporalUtil = require('./lib/util');
  *                                                          available throughout the session. The
  *                                                          initial context name/key is the empty
  *                                                          string
- * @param  {String[]}           [options.history=[]]        The command history to use for toggling
- *                                                                    command output with up and down
  * @param   {Object}            [options.streams]           An object holding the different streams
  *                                                          to use for input and output
  * @param   {Stream}            [options.streams.stdout]    The standard output stream
@@ -37,7 +35,6 @@ var Corporal = module.exports = function(options) {
     options = _.extend({}, options);
     options.disabled = options.disabled || [];
     options.env = options.env || {};
-    options.history = options.history || [];
 
     _.defaults(options.env, {
         'corporal_command_settings': {},
@@ -81,8 +78,7 @@ var Corporal = module.exports = function(options) {
                 'commandContexts': commandContexts,
                 'stdout': options.stdout,
                 'stderr': options.stderr,
-                'stdin': options.stdin,
-                'history': options.history
+                'stdin': options.stdin
             });
 
             _.each(allCommands, function(command, name) {
@@ -105,16 +101,28 @@ util.inherits(Corporal, events.EventEmitter);
 /**
  * Start a prompt loop for the user
  *
- * @param   {Function}  [callback]  Invoked when the user quits the prompt session
+ * @param   {Object}    [options]               Optional loop options
+ * @param   {Stringp[]} [options.history=[]]    The initial command history to use for toggling up
+ *                                              and down through command history
+ * @param   {Function}  [callback]              Invoked when the user quits the prompt session
  */
-Corporal.prototype.loop = function(callback) {
+Corporal.prototype.loop = function(options, callback) {
+    if (_.isFunction(callback)) {
+        options = options || {}
+    } else if (_.isFunction(options)) {
+        callback = options
+        options = {}
+    }
+
+    options = options || {};
+    options.history = options.history || []
     callback = callback || function() {};
 
     // Apply all known error handlers to the session
     this._session.errorHandlers(this._errorHandlers);
 
     // Begin the command loop
-    return CorporalUtil.doCommandLoop(this._session, callback);
+    return CorporalUtil.doCommandLoop(_.extend(options, {'session': this._session}), callback);
 };
 
 /**
@@ -129,8 +137,8 @@ Corporal.prototype.exec = function(commandName, args, callback) {
     if (_.isArray(args)) {
         callback = callback || function() {};
     } else if (_.isFunction(args)) {
-        args = [];
         callback = args;
+        args = [];
     } else {
         args = [];
         callback = callback || function() {};

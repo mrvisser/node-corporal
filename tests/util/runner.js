@@ -78,6 +78,11 @@ Runner.prototype.start = function(callback) {
  */
 Runner.prototype.exec = function(str, callback) {
     callback = callback || function(){};
+
+    if (process.env['CORPORAL_TEST_VERBOSE']) {
+        console.log('runner stdin: %s', str)
+    }
+
     this._child.stdin.write(str + '\n');
     this._whenPrompt(callback);
 };

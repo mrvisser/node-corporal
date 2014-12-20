@@ -23,4 +23,6 @@ var corporal = new Corporal({
 });
 
 // Start the interactive prompt
-corporal.on('load', corporal.loop);
+corporal.on('load', function() {
+    corporal.loop({'history': ['iam branden', 'greet']})
+});
