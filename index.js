@@ -102,7 +102,7 @@ util.inherits(Corporal, events.EventEmitter);
  * Start a prompt loop for the user
  *
  * @param   {Object}    [options]               Optional loop options
- * @param   {Stringp[]} [options.history=[]]    The initial command history to use for toggling up
+ * @param   {String[]}  [options.history=[]]    The initial command history to use for toggling up
  *                                              and down through command history
  * @param   {Function}  [callback]              Invoked when the user quits the prompt session
  */
