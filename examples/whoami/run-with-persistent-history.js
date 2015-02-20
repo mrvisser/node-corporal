@@ -60,11 +60,11 @@ function setupHistory(defaultHistory) {
       }
       lastElement = newElement; // remember for next push.
 
-      // call the original push method
-      Array.prototype.push.apply(this,arguments);
-
-      // and save the new history element (ignore errors)
+      // save the new history element (ignore errors)
       fs.appendFile(HISTORY_FILE,newElement + '\n',{encoding:'utf8'});
+
+      // and call the original push method
+      return Array.prototype.push.apply(this,arguments);
     }
 
     return history;
