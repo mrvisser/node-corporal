@@ -32,7 +32,7 @@
     "optimist": "0.6.x",
     "readcommand": "0.3.x",
     "sprintf-js": "0.0.x",
-    "underscore": "1.6.x"
+    "underscore": "1.12.x"
   },
   "devDependencies": {
     "grunt": "0.4.5",
