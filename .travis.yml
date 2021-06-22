@@ -1,17 +1,12 @@
 language: node_js
 node_js:
-  - 0.10
+    - 12
+    - 14
 
 branches:
-  only:
-    - master
-
-before_install:
-  - npm install -g grunt-cli
-
-script:
-  - grunt
+    only:
+        - master
 
 notifications:
-  email:
-    - mrvisser@gmail.com
+    email:
+        - mrvisser@gmail.com
