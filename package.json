@@ -29,7 +29,6 @@
   },
   "dependencies": {
     "colors": "0.6.x",
-    "mocha": "^2.0.1",
     "optimist": "0.6.x",
     "readcommand": "0.3.x",
     "sprintf-js": "0.0.x",
@@ -38,7 +37,8 @@
   "devDependencies": {
     "grunt": "0.4.5",
     "grunt-mocha-test": "0.12.4",
-    "grunt-release": "~0.7.0"
+    "grunt-release": "~0.7.0",
+    "mocha": "^2.0.1"
   },
   "engines": {
     "node": ">=0.8"
