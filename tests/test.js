@@ -173,6 +173,24 @@ describe('Built-In Commands', function() {
             });
         });
 
+        it('lists the help when using a --help argument', function(callback) {
+            var runner = _createRunner();
+            runner.start(function() {
+                runner.exec('quit --help', function(stdout, stderr) {
+                    assert.ok(!stderr);
+                    assert.notEqual(stdout.indexOf('Quit the interactive shell.'), -1);
+
+
+                    // Assert with further arguments
+                    runner.exec('quit --arg1 val1 --help', function(stdout, stderr) {
+                        assert.ok(!stderr);
+                        assert.notEqual(stdout.indexOf('Quit the interactive shell.'), -1);
+                        return callback();
+                    });
+                });
+            });
+        });
+
         it('lists the help and usage of the help command', function(callback) {
             var runner = _createRunner();
             runner.start(function() {
