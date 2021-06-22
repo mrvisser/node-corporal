@@ -1725,12 +1725,12 @@ readable-stream@^3.4.0:
     string_decoder "^1.1.1"
     util-deprecate "^1.0.1"
 
-readcommand@^0.3.0:
-  version "0.3.0"
-  resolved "https://registry.yarnpkg.com/readcommand/-/readcommand-0.3.0.tgz#471d65c78cfbe21c4e5d82e9cb331ba8104e9988"
-  integrity sha1-Rx1lx4z74hxOXYLpyzMbqBBOmYg=
+readcommand@^0.4.0:
+  version "0.4.0"
+  resolved "https://registry.yarnpkg.com/readcommand/-/readcommand-0.4.0.tgz#a8f1d5d4d4a58bd0abd9ff87592840cde96b8390"
+  integrity sha512-41QcOdvUJHfdOw2ucVyb8A5w/yC4MgpyS1yUDhYyswuPdGNBGFSVhGXuXWn4b4vl0vhYgZI4OyNTc7Nib3k4/g==
   dependencies:
-    underscore "1.6.x"
+    underscore "1.13.1"
 
 readdirp@~3.5.0:
   version "3.5.0"
@@ -2100,12 +2100,7 @@ typedarray-to-buffer@^3.1.5:
   dependencies:
     is-typedarray "^1.0.0"
 
-underscore@1.6.x:
-  version "1.6.0"
-  resolved "https://registry.yarnpkg.com/underscore/-/underscore-1.6.0.tgz#8b38b10cacdef63337b8b24e4ff86d45aea529a8"
-  integrity sha1-izixDKze9jM3uLJOT/htRa6lKag=
-
-underscore@^1.13.1:
+underscore@1.13.1, underscore@^1.13.1:
   version "1.13.1"
   resolved "https://registry.yarnpkg.com/underscore/-/underscore-1.13.1.tgz#0c1c6bd2df54b6b69f2314066d65b6cde6fcf9d1"
   integrity sha512-hzSoAVtJF+3ZtiFX0VgfFPHEDRm7Y/QPjGyNo4TVdnDTdft3tr8hEkD25a1jC+TjTuE7tkHGKkhwCgs9dgBB2g==
