@@ -25,20 +25,19 @@
   },
   "main": "./index.js",
   "scripts": {
-    "test": "node -e \"require('grunt').tasks(['mochaTest']);\""
+    "release": "release-it",
+    "test": "mocha tests/**.js"
   },
   "dependencies": {
-    "colors": "0.6.x",
-    "optimist": "0.6.x",
-    "readcommand": "0.3.x",
-    "sprintf-js": "0.0.x",
-    "underscore": "1.6.x"
+    "colors": "^1.4.0",
+    "optimist": "^0.6.0",
+    "readcommand": "^0.3.0",
+    "sprintf-js": "^1.1.2",
+    "underscore": "^1.13.1"
   },
   "devDependencies": {
-    "grunt": "0.4.5",
-    "grunt-mocha-test": "0.12.4",
-    "grunt-release": "~0.7.0",
-    "mocha": "^2.0.1"
+    "mocha": "^9.0.1",
+    "release-it": "^14.10.0"
   },
   "engines": {
     "node": ">=0.8"
