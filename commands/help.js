@@ -29,12 +29,19 @@ module.exports = {
         return callback();
     },
     'invoke': function(session, args, callback) {
-        var commandName = args[0];
-
         // A hidden ability of the `help` command is to output standard output on
         // stderr. Really only useful for API-level interaction, so it's not
         // advertised in the user-facing help
-        var out = args.includes('stderr') ? session.stderr() : session.stdout();
+        var out = false;
+        if (args.includes('--stderr')) {
+          out = session.stderr();
+          args.splice(args.indexOf('--stderr'), 1);
+        }
+        else {
+          out = session.stdout();
+        }
+
+        var commandName = args[0];
 
         if (commandName) {
             var command = session.commands().get(commandName);
