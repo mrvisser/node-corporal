@@ -16,8 +16,8 @@ var sprintf = require('sprintf-js').sprintf;
  *                      be displayed. This setting only impacts the help list index.
  */
 module.exports = {
-    'description': _getDescription(),
-    'help': sprintf('Usage: %s', _getOptimist().help()),
+    'description': 'Show a dialog of all available commands.',
+    'help': 'Usage: help [<command>]',
     'init': function(session, callback) {
         var allSettings = session.env('corporal_command_settings');
         var helpSettings = allSettings.help = _.isObject(allSettings.help) ?
@@ -29,13 +29,19 @@ module.exports = {
         return callback();
     },
     'invoke': function(session, args, callback) {
-        var argv = _getOptimist().parse(args);
-        var commandName = argv._[0];
-
         // A hidden ability of the `help` command is to output standard output on
         // stderr. Really only useful for API-level interaction, so it's not
         // advertised in the user-facing help
-        var out = (argv['stderr']) ? session.stderr() : session.stdout();
+        var out = false;
+        if (args.includes('--stderr')) {
+          out = session.stderr();
+          args.splice(args.indexOf('--stderr'), 1);
+        }
+        else {
+          out = session.stdout();
+        }
+
+        var commandName = args[0];
 
         if (commandName) {
             var command = session.commands().get(commandName);
@@ -100,14 +106,6 @@ module.exports = {
             .value());
     }
 };
-
-function _getDescription() {
-    return 'Show a dialog of all available commands.';
-}
-
-function _getOptimist() {
-    return require('optimist').usage('help [<command>]');
-}
 
 function _getSettings(session) {
     var env = session.env();
